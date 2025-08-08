@@ -1,11 +1,11 @@
 use clap::Args;
-use colored::*;
 use rand::seq::SliceRandom;
 use std::env;
 use std::fs;
 use std::io;
 use std::path::Path;
-
+use rand::Rng;
+use crate::rainbow_mod::RAINBOW_STOPS;
 use crate::utils::{cat_face, load_waifu_lines, rainbow, speak};
 
 /// 🏠 `waifu cd` 子命令参数
@@ -23,6 +23,7 @@ pub fn run_cd(args: CdArgs) -> io::Result<()> {
     let lines = load_waifu_lines();
     let path = Path::new(&args.target);
     let path_str = args.target.clone();
+    let offset = rand::thread_rng().gen_range(0..RAINBOW_STOPS.len() as u8);
 
     if path.exists() && path.is_dir() {
         // ✅ 成功：撒娇输出 + 输出目标路径
@@ -38,8 +39,9 @@ pub fn run_cd(args: CdArgs) -> io::Result<()> {
         // 猫脸固定黄色，后半段做渐变
         println!(
             "{} {}",
-            cat_face(&lines).bright_yellow(),
-            rainbow(&line_cn, 0)
+            // cat_face(&lines).bright_yellow(),
+            rainbow(cat_face(&lines), offset),
+            rainbow(&line_cn, offset)
         );
 
         if args.miao {
@@ -62,7 +64,7 @@ pub fn run_cd(args: CdArgs) -> io::Result<()> {
         let line_cn = pool.cn.replace("{path}", &path_str);
         let line_jp = pool.jp.replace("{path}", &path_str);
 
-        println!("{} {}", cat_face(&lines).bright_red(), rainbow(&line_cn, 0));
+        println!("{} {}", rainbow(cat_face(&lines),0), rainbow(&line_cn, 0));
 
         if args.miao {
             speak(&line_jp);

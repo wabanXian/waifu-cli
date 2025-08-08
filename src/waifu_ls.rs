@@ -3,6 +3,8 @@ use clap::Args;
 use colored::*;
 use std::fs;
 use std::path::Path;
+use  rand::Rng;
+use crate::rainbow_mod::RAINBOW_STOPS;
 
 /// 📂 `waifu ls` 子命令参数
 #[derive(Args)]
@@ -34,18 +36,30 @@ pub fn run_ls(args: LsArgs) {
     // 解析路径
     let abs_path = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
     let mut display_path = abs_path.display().to_string();
+    let offset = rand::thread_rng().gen_range(0..RAINBOW_STOPS.len() as u8);
     if display_path.starts_with(r"\\?\") {
         display_path = display_path.trim_start_matches(r"\\?\").to_string();
     }
 
     // 输出头部撒娇语句
+    // println!(
+    //     "{}\n{}",
+    //     format!("{} {}", cat_face(&lines), lines.ls.header.cn)
+    //         .bright_magenta()
+    //         .bold(),
+    //     lines.ls.path.replace("{path}", &display_path).bold()
+    // );
     println!(
         "{}\n{}",
-        format!("{} {}", cat_face(&lines), lines.ls.header.cn)
-            .bright_magenta()
-            .bold(),
-        lines.ls.path.replace("{path}", &display_path).bold()
+        format!(
+            "{} {}",
+            rainbow(&cat_face(&lines), offset),
+            rainbow(&lines.ls.header.cn, offset)
+        )
+        .bold(),
+        rainbow(&lines.ls.path.replace("{path}", &display_path), 0).bold()
     );
+    
 
     // 🔍（可选）统计文件数（你可以不做，用 powershell 自己统计）
     let count = match fs::read_dir(path) {
@@ -62,7 +76,8 @@ pub fn run_ls(args: LsArgs) {
         .map(|range| range.cn.as_str())
         .unwrap_or("哼，主人不给我设定语句喵！");
 
-    println!("\n{}", rainbow(msg, 2));
+    // println!("\n{}", rainbow(msg, 0));
+    println!("\n{} {}", rainbow(&cat_face(&lines), offset), rainbow(msg, offset));
 
     if args.miao {
         if let Some(jp) = lines

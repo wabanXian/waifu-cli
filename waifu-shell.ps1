@@ -95,4 +95,3 @@ function ls {
         Write-Host "喵呜~ 找不到 waifu 留下的路径喵…不执行 ls 了！" -ForegroundColor Red
     }
 }
-

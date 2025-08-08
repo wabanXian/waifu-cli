@@ -5,6 +5,7 @@ use rand::Rng;
 use std::net::{IpAddr, ToSocketAddrs};
 use std::thread::sleep;
 use std::time::Duration;
+use crate::rainbow_mod::RAINBOW_STOPS;
 
 use ping_rs::{send_ping, PingOptions};
 
@@ -98,7 +99,7 @@ fn get_success_line(ms: u32, ip: IpAddr, with_voice: bool) -> String {
     let cn_line = cn.replace("{ip}", &ip_str).replace("{ms}", &ms_str);
     let jp_line = jp.replace("{ip}", &ip_str).replace("{ms}", &ms_str);
 
-    let offset = rand::thread_rng().gen_range(0..6);
+    let offset = rand::thread_rng().gen_range(0..RAINBOW_STOPS.len() as u8);
     println!(
         "{} {}",
         cat_face(&lines).bright_yellow(),

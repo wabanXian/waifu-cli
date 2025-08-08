@@ -1,6 +1,6 @@
 use colored::Colorize;
 
-const RAINBOW_STOPS: [(u8, u8, u8); 7] = [
+pub const RAINBOW_STOPS: [(u8, u8, u8); 7] = [
     (255, 0, 0),
     (255, 128, 0),
     (255, 255, 0),

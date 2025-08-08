@@ -25,12 +25,12 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Ping(args) => waifu_ping::run_ping(args), // 同步，照常调用
+        Commands::Ping(args) => waifu_ping::run_ping(args),
         Commands::Cd(args) => {
             if let Err(e) = waifu_cd::run_cd(args) {
                 eprintln!("cd 执行失败：{e}");
             }
         }
-        Commands::Ls(args) => waifu_ls::run_ls(args), // 同步，照常调用
+        Commands::Ls(args) => waifu_ls::run_ls(args),
     }
 }

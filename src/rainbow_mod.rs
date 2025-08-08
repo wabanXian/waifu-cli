@@ -40,4 +40,3 @@ pub fn rainbow(text: &str, base_offset: usize) -> String {
     }
     out
 }
-

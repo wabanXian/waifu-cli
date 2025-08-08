@@ -36,7 +36,9 @@ pub fn run_cd(args: CdArgs) -> io::Result<()> {
         let line_jp = pool.jp.replace("{path}", &path_str);
 
         // 猫脸固定黄色，后半段做渐变
+
         println!("{} {}", cat_face(&lines).bright_yellow(), rainbow(&line_cn, 0));
+
 
         if args.miao {
             speak(&line_jp);
@@ -59,6 +61,7 @@ pub fn run_cd(args: CdArgs) -> io::Result<()> {
         let line_jp = pool.jp.replace("{path}", &path_str);
 
         println!("{} {}", cat_face(&lines).bright_red(), rainbow(&line_cn, 0));
+
 
         if args.miao {
             speak(&line_jp);

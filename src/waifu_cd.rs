@@ -3,10 +3,10 @@ use colored::*;
 use rand::seq::SliceRandom;
 use std::env;
 use std::fs;
-use std::io::{self, Write};
+use std::io;
 use std::path::Path;
 
-use crate::utils::{cat_face, load_waifu_lines, rainbow_animate, speak};
+use crate::utils::{cat_face, load_waifu_lines, rainbow, speak};
 
 /// 🏠 `waifu cd` 子命令参数
 #[derive(Args)]
@@ -19,7 +19,7 @@ pub struct CdArgs {
     pub miao: bool,
 }
 
-pub async fn run_cd(args: CdArgs) -> io::Result<()> {
+pub fn run_cd(args: CdArgs) -> io::Result<()> {
     let lines = load_waifu_lines();
     let path = Path::new(&args.target);
     let path_str = args.target.clone();
@@ -35,10 +35,12 @@ pub async fn run_cd(args: CdArgs) -> io::Result<()> {
         let line_cn = pool.cn.replace("{path}", &path_str);
         let line_jp = pool.jp.replace("{path}", &path_str);
 
-        // 猫脸固定黄色，后半段做异步渐变
-        print!("{} ", cat_face(&lines).bright_yellow());
-        io::stdout().flush()?;
-        rainbow_animate(&line_cn, 60, 1, Some(3)).await?;
+        // 猫脸固定黄色，后半段做渐变
+        println!(
+            "{} {}",
+            cat_face(&lines).bright_yellow(),
+            rainbow(&line_cn, 0)
+        );
 
         if args.miao {
             speak(&line_jp);
@@ -60,9 +62,7 @@ pub async fn run_cd(args: CdArgs) -> io::Result<()> {
         let line_cn = pool.cn.replace("{path}", &path_str);
         let line_jp = pool.jp.replace("{path}", &path_str);
 
-        print!("{} ", cat_face(&lines).bright_red());
-        io::stdout().flush()?;
-        rainbow_animate(&line_cn, 60, 1, Some(3)).await?;
+        println!("{} {}", cat_face(&lines).bright_red(), rainbow(&line_cn, 0));
 
         if args.miao {
             speak(&line_jp);

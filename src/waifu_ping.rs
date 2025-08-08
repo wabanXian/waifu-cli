@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use ping_rs::{send_ping, PingOptions};
 
-use crate::utils::{cat_face, get_time_period, rainbow, speak, load_waifu_lines, VoiceLine};
+use crate::utils::{cat_face, get_time_period, load_waifu_lines, rainbow, speak, VoiceLine};
 
 /// 🏓 `waifu ping` 子命令参数
 #[derive(Args)]
@@ -99,7 +99,11 @@ fn get_success_line(ms: u32, ip: IpAddr, with_voice: bool) -> String {
     let jp_line = jp.replace("{ip}", &ip_str).replace("{ms}", &ms_str);
 
     let offset = rand::thread_rng().gen_range(0..6);
-    println!("{} {}", cat_face(&lines).bright_yellow(), rainbow(&cn_line, offset));
+    println!(
+        "{} {}",
+        cat_face(&lines).bright_yellow(),
+        rainbow(&cn_line, offset)
+    );
 
     if with_voice {
         speak(&jp_line);
@@ -122,10 +126,10 @@ fn get_fail_line(with_voice: bool) -> String {
 
     let VoiceLine { cn, jp } = pool.choose(&mut rand::thread_rng()).unwrap();
     let offset = rand::thread_rng().gen_range(0..6);
-    println!("{} {}", cat_face(&lines).bright_red(), rainbow(&cn, offset));
+    println!("{} {}", cat_face(&lines).bright_red(), rainbow(cn, offset));
 
     if with_voice {
-        speak(&jp);
+        speak(jp);
     }
 
     "".to_string()

@@ -1,10 +1,8 @@
+use crate::utils::{cat_face, load_waifu_lines, rainbow, speak};
 use clap::Args;
 use colored::*;
 use std::fs;
 use std::path::Path;
-use crate::utils::{cat_face,speak, rainbow, load_waifu_lines};
-
-
 
 /// 📂 `waifu ls` 子命令参数
 #[derive(Args)]
@@ -24,11 +22,7 @@ pub fn run_ls(args: LsArgs) {
     let path = Path::new(&args.path);
 
     if !path.exists() || !path.is_dir() {
-        println!(
-            "{} {}",
-            "呜呜……这个地方找不到哟 >_<".red(),
-            args.path
-        );
+        println!("{} {}", "呜呜……这个地方找不到哟 >_<".red(), args.path);
 
         if args.miao {
             speak("うぅ……このフォルダ、見つからないよ〜");
@@ -47,7 +41,9 @@ pub fn run_ls(args: LsArgs) {
     // 输出头部撒娇语句
     println!(
         "{}\n{}",
-        format!("{} {}", cat_face(&lines), lines.ls.header.cn).bright_magenta().bold(),
+        format!("{} {}", cat_face(&lines), lines.ls.header.cn)
+            .bright_magenta()
+            .bold(),
         lines.ls.path.replace("{path}", &display_path).bold()
     );
 
@@ -86,5 +82,4 @@ pub fn run_ls(args: LsArgs) {
     if let Err(e) = fs::write(&tmp_path, &display_path) {
         eprintln!("写入 waifu_ls_path.txt 失败：{}", e);
     }
-
 }

@@ -1,6 +1,4 @@
 use colored::Colorize;
-use std::io::{self, Write};
-use std::time::{Duration, Instant};
 
 const RAINBOW_STOPS: [(u8, u8, u8); 7] = [
     (255, 0, 0),
@@ -41,40 +39,4 @@ pub fn rainbow(text: &str, base_offset: usize) -> String {
         out.push_str(&ch.to_string().truecolor(r, g, b).to_string());
     }
     out
-}
-
-// 用于在动画结束时恢复光标
-struct CursorGuard;
-impl Drop for CursorGuard {
-    fn drop(&mut self) {
-        eprint!("\x1b[?25h\n");
-        let _ = io::stderr().flush();
-    }
-}
-
-/// 动画版：阻塞当前线程 (使用 std::thread::sleep)
-pub fn animate(text: &str, fps: u32, step: usize, seconds: Option<u64>) -> io::Result<()> {
-    let _guard = CursorGuard; // 作用域结束自动恢复光标
-
-    // 隐藏光标
-    eprint!("\x1b[?25l");
-    io::stderr().flush()?;
-
-    let frame = Duration::from_secs_f32(1.0 / fps.max(1) as f32);
-    let start = Instant::now();
-    let mut offset = 0usize;
-
-    loop {
-        print!("\r\x1b[2K{}", rainbow(text, offset));
-        io::stdout().flush()?; // 快速阻塞输出
-        offset = offset.wrapping_add(step);
-
-        if let Some(s) = seconds {
-            if start.elapsed() >= Duration::from_secs(s) {
-                break;
-            }
-        }
-        std::thread::sleep(frame); // 阻塞睡眠
-    }
-    Ok(())
 }

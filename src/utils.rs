@@ -4,7 +4,6 @@ use rand::seq::SliceRandom;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs;
-use std::io; // 为了 io::Result
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -13,10 +12,6 @@ pub fn rainbow(text: &str, base_offset: u8) -> String {
     rainbow_mod::rainbow(text, base_offset as usize)
 }
 
-/// 🌈 彩虹动画：阻塞版（std::thread::sleep）
-pub fn rainbow_animate(text: &str, fps: u32, step: usize, seconds: Option<u64>) -> io::Result<()> {
-    rainbow_mod::animate(text, fps, step, seconds)
-}
 
 /// ⏰ 获取当前时间段（morning / afternoon / evening）
 pub fn get_time_period() -> &'static str {

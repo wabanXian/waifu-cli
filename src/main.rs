@@ -1,8 +1,8 @@
-mod waifu_ping;
+mod rainbow_mod;
 mod utils;
 mod waifu_cd;
 mod waifu_ls;
-mod rainbow_mod;
+mod waifu_ping;
 
 use clap::{Parser, Subcommand};
 
@@ -21,15 +21,13 @@ enum Commands {
     Ls(waifu_ls::LsArgs),
 }
 
-#[tokio::main] // 用 Tokio 作为异步入口
-async fn main() {
+fn main() {
     let cli = Cli::parse();
 
     match cli.command {
         Commands::Ping(args) => waifu_ping::run_ping(args), // 同步，照常调用
         Commands::Cd(args) => {
-            // 异步：等待动画完成；出错就友好提示
-            if let Err(e) = waifu_cd::run_cd(args).await {
+            if let Err(e) = waifu_cd::run_cd(args) {
                 eprintln!("cd 执行失败：{e}");
             }
         }

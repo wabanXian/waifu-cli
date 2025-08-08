@@ -2,13 +2,21 @@ use colored::Colorize;
 use std::io::{self, Write};
 use std::time::{Duration, Instant};
 
-const RAINBOW_STOPS: [(u8,u8,u8); 7] = [
-    (255,0,0),(255,128,0),(255,255,0),(0,255,0),(0,255,255),(0,0,255),(153,0,255)
+const RAINBOW_STOPS: [(u8, u8, u8); 7] = [
+    (255, 0, 0),
+    (255, 128, 0),
+    (255, 255, 0),
+    (0, 255, 0),
+    (0, 255, 255),
+    (0, 0, 255),
+    (153, 0, 255),
 ];
 
 pub fn rainbow(text: &str, base_offset: usize) -> String {
     let chars: Vec<char> = text.chars().collect();
-    if chars.is_empty() { return String::new(); }
+    if chars.is_empty() {
+        return String::new();
+    }
     let len = chars.len();
     let denom = (len.max(2) - 1) as f32;
     let mut out = String::with_capacity(text.len() * 10);
@@ -17,7 +25,9 @@ pub fn rainbow(text: &str, base_offset: usize) -> String {
     for (i, ch) in chars.into_iter().enumerate() {
         let rolled = (i + base_offset) % len;
         let mut pos = rolled as f32 / denom;
-        if pos >= 1.0 { pos = f32::from_bits(0x3F7FFFFF); } // 0.99999994
+        if pos >= 1.0 {
+            pos = f32::from_bits(0x3F7FFFFF);
+        } // 0.99999994
         let segf = pos * last as f32;
         let seg = segf.floor() as usize;
         let t = segf - seg as f32;
@@ -42,13 +52,8 @@ impl Drop for CursorGuard {
     }
 }
 
-/// 异步动画版：不阻塞运行时线程（用 tokio::time::sleep）
-pub async fn animate_async(
-    text: &str,
-    fps: u32,
-    step: usize,
-    seconds: Option<u64>,
-) -> io::Result<()> {
+/// 动画版：阻塞当前线程 (使用 std::thread::sleep)
+pub fn animate(text: &str, fps: u32, step: usize, seconds: Option<u64>) -> io::Result<()> {
     let _guard = CursorGuard; // 作用域结束自动恢复光标
 
     // 隐藏光标
@@ -61,7 +66,7 @@ pub async fn animate_async(
 
     loop {
         print!("\r\x1b[2K{}", rainbow(text, offset));
-        io::stdout().flush()?; // 这行是阻塞的，但很快；不影响其它 async 任务调度
+        io::stdout().flush()?; // 快速阻塞输出
         offset = offset.wrapping_add(step);
 
         if let Some(s) = seconds {
@@ -69,7 +74,7 @@ pub async fn animate_async(
                 break;
             }
         }
-        tokio::time::sleep(frame).await; // 关键：异步睡眠
+        std::thread::sleep(frame); // 阻塞睡眠
     }
     Ok(())
 }

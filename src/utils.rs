@@ -13,14 +13,9 @@ pub fn rainbow(text: &str, base_offset: u8) -> String {
     rainbow_mod::rainbow(text, base_offset as usize)
 }
 
-/// 🌈 彩虹动画：异步版（Tokio），不阻塞主线程
-pub async fn rainbow_animate(
-    text: &str,
-    fps: u32,
-    step: usize,
-    seconds: Option<u64>,
-) -> io::Result<()> {
-    rainbow_mod::animate_async(text, fps, step, seconds).await
+/// 🌈 彩虹动画：阻塞版（std::thread::sleep）
+pub fn rainbow_animate(text: &str, fps: u32, step: usize, seconds: Option<u64>) -> io::Result<()> {
+    rainbow_mod::animate(text, fps, step, seconds)
 }
 
 /// ⏰ 获取当前时间段（morning / afternoon / evening）

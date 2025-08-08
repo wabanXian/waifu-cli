@@ -1,9 +1,6 @@
 ﻿# speak.py
 import sys
 import clr
-import winsound
-# winsound.Beep(1000, 300)
-# print("hi from Python")
 
 dll_path = r"C:\Program Files\CeVIO\CeVIO AI\CeVIO.Talk.RemoteService2.dll"
 clr.AddReference(dll_path)

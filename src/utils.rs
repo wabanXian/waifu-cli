@@ -12,7 +12,6 @@ pub fn rainbow(text: &str, base_offset: u8) -> String {
     rainbow_mod::rainbow(text, base_offset as usize)
 }
 
-
 /// ⏰ 获取当前时间段（morning / afternoon / evening）
 pub fn get_time_period() -> &'static str {
     let hour = Local::now().hour();
@@ -91,11 +90,39 @@ pub struct LsCountLine {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct ClearLines {
+    pub success: Vec<VoiceLine>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct EchoLines {
+    pub sayings: Vec<VoiceLine>,
+    pub empty: VoiceLine,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CatLines {
+    pub success: Vec<VoiceLine>, // 读取成功时的撒娇文案
+    pub fail: Vec<VoiceLine>,    // 找不到/读取失败时
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PsLines {
+    pub success: Vec<VoiceLine>,        // 开场
+    pub fail: Vec<VoiceLine>,           // 异常/空
+    pub footer: Option<Vec<VoiceLine>>, // 结尾（可选）
+}
+
+#[derive(Debug, Deserialize)]
 pub struct WaifuLines {
     pub cat_faces: Vec<String>,
     pub ping: PingLines,
     pub cd: CdLines,
     pub ls: LsLines,
+    pub clear: ClearLines,
+    pub echo: EchoLines,
+    pub cat: CatLines,
+    pub ps: PsLines,
 }
 
 /// 📦 加载 JSON 文件为 WaifuLines

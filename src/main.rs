@@ -3,6 +3,10 @@ mod utils;
 mod waifu_cd;
 mod waifu_ls;
 mod waifu_ping;
+mod waifu_cat;
+mod waifu_echo;
+mod waifu_clear;
+mod waifu_ps;
 
 use clap::{Parser, Subcommand};
 
@@ -19,6 +23,10 @@ enum Commands {
     Ping(waifu_ping::PingArgs),
     Cd(waifu_cd::CdArgs),
     Ls(waifu_ls::LsArgs),
+    Cat(waifu_cat::CatArgs), 
+    Echo(waifu_echo::EchoArgs),
+    Clear(waifu_clear::ClearArgs),
+    Ps(waifu_ps::PsArgs),
 }
 
 fn main() {
@@ -32,5 +40,9 @@ fn main() {
             }
         }
         Commands::Ls(args) => waifu_ls::run_ls(args),
+        Commands::Cat(args)  => waifu_cat::run_cat(args),
+        Commands::Echo(args)  => waifu_echo::run_echo(args),
+        Commands::Clear(args)  => waifu_clear::run_clear(args),
+        Commands::Ps(args)  => waifu_ps::run_ps(args),
     }
 }

@@ -12,6 +12,7 @@ pub fn rainbow(text: &str, base_offset: u8) -> String {
     rainbow_mod::rainbow(text, base_offset as usize)
 }
 
+
 /// ⏰ 获取当前时间段（morning / afternoon / evening）
 pub fn get_time_period() -> &'static str {
     let hour = Local::now().hour();

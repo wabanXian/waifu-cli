@@ -1,5 +1,7 @@
+mod config;
 mod style;
 mod utils;
+mod voice;
 mod waifu_cd;
 mod waifu_ls;
 mod waifu_ping;

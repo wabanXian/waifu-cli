@@ -29,6 +29,10 @@ pub struct PingArgs {
 pub fn run_ping(args: PingArgs) -> AppResult {
     println!("{}", "🌸 Waifu Ping 正在启动~".magenta().bold());
 
+    if args.count == 0 {
+        return Err("ping 次数必须至少为 1".to_string());
+    }
+
     let Some(ip) = resolve_host_to_ip(&args.target) else {
         eprintln!("{}", "呜呜……主人，找不到这个地址~ >_<".red());
         return Err(format!("无法解析目标地址：{}", args.target));
@@ -41,11 +45,13 @@ pub fn run_ping(args: PingArgs) -> AppResult {
         ip.to_string().yellow()
     );
 
+    let mut success_count = 0;
     for i in 1..=args.count {
         print!("{} ", format!("[{}/{}]", i, args.count).dimmed());
 
         match ping_once(ip) {
             Ok(ms) => {
+                success_count += 1;
                 get_success_line(ms, ip, args.miao)?;
             }
             Err(_) => {
@@ -57,6 +63,11 @@ pub fn run_ping(args: PingArgs) -> AppResult {
     }
 
     println!("\n{}", "🌟 Waifu 任务结束~ 记得夸夸我嘛~".magenta());
+
+    if success_count == 0 {
+        return Err("所有 ping 请求均失败".to_string());
+    }
+
     Ok(())
 }
 

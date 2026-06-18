@@ -50,6 +50,14 @@ fn echo_accepts_separate_arguments() {
 }
 
 #[test]
+fn zero_count_ping_returns_failure_without_resolving_target() {
+    let output = run_waifu(&["ping", "invalid host %%%", "--count", "0"]);
+
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("ping 次数必须至少为 1"));
+}
+
+#[test]
 fn missing_cat_target_returns_failure() {
     let dir = TestDir::new();
     let missing = dir.path().join("missing.txt");

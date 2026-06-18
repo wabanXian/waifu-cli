@@ -53,7 +53,7 @@ pub fn run_ls(args: LsArgs) -> AppResult {
         "{}\n{}",
         format!(
             "{} {}",
-            rainbow(&cat_face(&lines), offset),
+            rainbow(cat_face(&lines), offset),
             rainbow(&lines.ls.header.cn, offset)
         )
         .bold(),
@@ -76,7 +76,7 @@ pub fn run_ls(args: LsArgs) -> AppResult {
         .unwrap_or("哼，主人不给我设定语句喵！");
 
     // println!("\n{}", rainbow(msg, 0));
-    eprintln!("\n{} {}", rainbow(&cat_face(&lines), offset), rainbow(msg, offset));
+    eprintln!("\n{} {}", rainbow(cat_face(&lines), offset), rainbow(msg, offset));
 
     if args.miao {
         if let Some(jp) = lines

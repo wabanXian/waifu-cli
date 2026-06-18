@@ -1,5 +1,4 @@
 use clap::Args;
-use colored::*;
 use rand::{seq::SliceRandom, Rng};
 use std::process::Command;
 

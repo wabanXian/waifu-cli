@@ -41,7 +41,7 @@ pub fn run_echo(args: EchoArgs) -> AppResult {
     let mut stdout = io::stdout();
     let cat = rainbow(cat_face(&lines), offset);
     let msg = rainbow(&cn_line, offset);
-    writeln!(stdout, "{} {}", cat, msg)
+    writeln!(stdout, "{cat} {msg}")
         .map_err(|e| format!("写入标准输出失败：{e}"))?;
 
     // 语音（有就播，无就算了）

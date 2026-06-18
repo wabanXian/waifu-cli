@@ -78,7 +78,7 @@ fn ping_once(addr: IpAddr) -> Result<u32, String> {
 
     match send_ping(&addr, timeout, &data, Some(&options)) {
         Ok(reply) => Ok(reply.rtt),
-        Err(e) => Err(format!("{:?}", e)),
+        Err(e) => Err(format!("{e:?}")),
     }
 }
 

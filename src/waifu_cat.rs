@@ -1,5 +1,4 @@
 use clap::Args;
-use colored::*;
 use rand::seq::SliceRandom;
 use rand::Rng;
 use std::fs;

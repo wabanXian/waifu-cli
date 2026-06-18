@@ -5,11 +5,10 @@ use rand::Rng;
 use std::net::{IpAddr, ToSocketAddrs};
 use std::thread::sleep;
 use std::time::Duration;
-use crate::rainbow_mod::RAINBOW_STOPS;
 
 use ping_rs::{send_ping, PingOptions};
 
-use crate::utils::{cat_face, get_time_period, load_waifu_lines, rainbow, speak, AppResult, VoiceLine};
+use crate::utils::{cat_face, get_time_period, load_waifu_lines, rainbow, speak, AppResult, VoiceLine, RAINBOW_STOPS};
 
 /// 🏓 `waifu ping` 子命令参数
 #[derive(Args)]

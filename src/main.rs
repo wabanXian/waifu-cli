@@ -1,4 +1,4 @@
-mod rainbow_mod;
+mod style;
 mod utils;
 mod waifu_cd;
 mod waifu_ls;

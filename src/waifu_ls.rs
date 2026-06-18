@@ -1,10 +1,9 @@
-use crate::utils::{cat_face, load_waifu_lines, rainbow, speak, AppResult};
+use crate::utils::{cat_face, load_waifu_lines, rainbow, speak, AppResult, RAINBOW_STOPS};
 use clap::Args;
 use colored::*;
 use std::fs;
 use std::path::Path;
 use  rand::Rng;
-use crate::rainbow_mod::RAINBOW_STOPS;
 
 /// 📂 `waifu ls` 子命令参数
 #[derive(Args)]

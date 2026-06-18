@@ -2,8 +2,7 @@ use clap::Args;
 use rand::seq::SliceRandom;
 use std::path::Path;
 use rand::Rng;
-use crate::rainbow_mod::RAINBOW_STOPS;
-use crate::utils::{cat_face, load_waifu_lines, rainbow, speak, AppResult};
+use crate::utils::{cat_face, load_waifu_lines, rainbow, speak, AppResult, RAINBOW_STOPS};
 
 /// 🏠 `waifu cd` 子命令参数
 #[derive(Args)]

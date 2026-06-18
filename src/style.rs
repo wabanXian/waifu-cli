@@ -10,7 +10,7 @@ pub const RAINBOW_STOPS: [(u8, u8, u8); 7] = [
     (153, 0, 255),
 ];
 
-pub fn rainbow(text: &str, base_offset: usize) -> String {
+pub fn rainbow(text: &str, base_offset: u8) -> String {
     let chars: Vec<char> = text.chars().collect();
     if chars.is_empty() {
         return String::new();
@@ -21,7 +21,7 @@ pub fn rainbow(text: &str, base_offset: usize) -> String {
     let last = RAINBOW_STOPS.len() - 1;
 
     for (i, ch) in chars.into_iter().enumerate() {
-        let rolled = (i + base_offset) % len;
+        let rolled = (i + base_offset as usize) % len;
         let mut pos = rolled as f32 / denom;
         if pos >= 1.0 {
             pos = f32::from_bits(0x3F7FFFFF);

@@ -1,4 +1,4 @@
-use crate::rainbow_mod;
+pub use crate::style::{rainbow, RAINBOW_STOPS};
 use chrono::{Local, Timelike};
 use rand::seq::SliceRandom;
 use serde::Deserialize;
@@ -8,11 +8,6 @@ use std::path::PathBuf;
 use std::process::Command;
 
 pub type AppResult<T = ()> = Result<T, String>;
-
-/// 🌈 彩虹染色：每个字不同颜色（静态，多段渐变 7 色）
-pub fn rainbow(text: &str, base_offset: u8) -> String {
-    rainbow_mod::rainbow(text, base_offset as usize)
-}
 
 /// ⏰ 获取当前时间段（morning / afternoon / evening）
 pub fn get_time_period() -> &'static str {
@@ -117,7 +112,9 @@ pub struct CatLines {
 #[derive(Debug, Deserialize)]
 pub struct PsLines {
     pub success: Vec<VoiceLine>,        // 开场
+    #[allow(dead_code)]
     pub fail: Vec<VoiceLine>,           // 异常/空
+    #[allow(dead_code)]
     pub footer: Option<Vec<VoiceLine>>, // 结尾（可选）
 }
 

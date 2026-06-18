@@ -1,4 +1,4 @@
-use crate::utils::{cat_face, load_waifu_lines, rainbow, speak};
+use crate::utils::{cat_face, load_waifu_lines, rainbow, speak, AppResult};
 use clap::Args;
 use colored::*;
 use std::fs;
@@ -19,18 +19,18 @@ pub struct LsArgs {
 }
 
 /// 🏁 waifu ls 入口
-pub fn run_ls(args: LsArgs) {
-    let lines = load_waifu_lines();
+pub fn run_ls(args: LsArgs) -> AppResult {
+    let lines = load_waifu_lines()?;
     let path = Path::new(&args.path);
 
     if !path.exists() || !path.is_dir() {
-        println!("{} {}", "呜呜……这个地方找不到哟 >_<".red(), args.path);
+        eprintln!("{} {}", "呜呜……这个地方找不到哟 >_<".red(), args.path);
 
         if args.miao {
             speak("うぅ……このフォルダ、見つからないよ〜");
         }
 
-        return;
+        return Err(format!("目标目录不存在：{}", args.path));
     }
 
     // 解析路径
@@ -49,7 +49,7 @@ pub fn run_ls(args: LsArgs) {
     //         .bold(),
     //     lines.ls.path.replace("{path}", &display_path).bold()
     // );
-    println!(
+    eprintln!(
         "{}\n{}",
         format!(
             "{} {}",
@@ -62,10 +62,9 @@ pub fn run_ls(args: LsArgs) {
     
 
     // 🔍（可选）统计文件数（你可以不做，用 powershell 自己统计）
-    let count = match fs::read_dir(path) {
-        Ok(entries) => entries.count(),
-        Err(_) => 0,
-    };
+    let count = fs::read_dir(path)
+        .map_err(|e| format!("读取目录 {} 失败：{e}", args.path))?
+        .count();
 
     // 输出文件数段的彩色提示
     let msg = lines
@@ -77,7 +76,7 @@ pub fn run_ls(args: LsArgs) {
         .unwrap_or("哼，主人不给我设定语句喵！");
 
     // println!("\n{}", rainbow(msg, 0));
-    println!("\n{} {}", rainbow(&cat_face(&lines), offset), rainbow(msg, offset));
+    eprintln!("\n{} {}", rainbow(&cat_face(&lines), offset), rainbow(msg, offset));
 
     if args.miao {
         if let Some(jp) = lines
@@ -91,10 +90,7 @@ pub fn run_ls(args: LsArgs) {
         }
     }
 
-    // ✅ 写入路径到临时文件，供 powershell 调用 ls
-    use std::env;
-    let tmp_path = env::temp_dir().join("waifu_ls_path.txt");
-    if let Err(e) = fs::write(&tmp_path, &display_path) {
-        eprintln!("写入 waifu_ls_path.txt 失败：{}", e);
-    }
+    println!("{display_path}");
+
+    Ok(())
 }

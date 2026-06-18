@@ -2,10 +2,8 @@ use clap::Args;
 use colored::*;
 use rand::seq::SliceRandom;
 use rand::Rng;
-use std::env;
-use std::fs;
 
-use crate::utils::{cat_face, load_waifu_lines, rainbow, speak, VoiceLine};
+use crate::utils::{cat_face, load_waifu_lines, rainbow, speak, AppResult, VoiceLine};
 
 /// 🐾 `waifu ps` 子命令参数（只负责撒娇&下发参数）
 #[derive(Args)]
@@ -23,36 +21,34 @@ pub struct PsArgs {
     pub miao: bool,
 }
 
-pub fn run_ps(args: PsArgs) {
-    let lines = load_waifu_lines();
+pub fn run_ps(args: PsArgs) -> AppResult {
+    let lines = load_waifu_lines()?;
     let offset = rand::thread_rng().gen_range(0..13);
+    let sort = args.sort.trim().to_lowercase();
+
+    if !matches!(sort.as_str(), "cpu" | "mem" | "memory") {
+        return Err(format!("不支持的排序字段：{}", args.sort));
+    }
 
     // 开场文案（来自 waifu.json）
-    if let Some(VoiceLine { cn, jp }) = lines.ps.success.choose(&mut rand::thread_rng()) {
-        let cn = cn.replace("{top}", &args.top.to_string())
-                   .replace("{sort}", &args.sort);
-        let jp = jp.replace("{top}", &args.top.to_string())
-                   .replace("{sort}", &args.sort);
+    let VoiceLine { cn, jp } = lines.ps.success.choose(&mut rand::thread_rng())
+        .ok_or_else(|| "ps.success 文案为空".to_string())?;
+    let cn = cn.replace("{top}", &args.top.to_string())
+               .replace("{sort}", &args.sort);
+    let jp = jp.replace("{top}", &args.top.to_string())
+               .replace("{sort}", &args.sort);
 
-        println!(
-            "{} {}",
-            rainbow(cat_face(&lines), offset),
-            rainbow(&cn, offset)
-        );
-        if args.miao { speak(&jp); }
-    }
+    eprintln!(
+        "{} {}",
+        rainbow(cat_face(&lines), offset),
+        rainbow(&cn, offset)
+    );
+    if args.miao { speak(&jp); }
 
-    // ✅ 把参数写进临时文件（给 PowerShell 用）
-    let tdir = env::temp_dir();
-    let top_file  = tdir.join("waifu_ps_top.txt");
-    let sort_file = tdir.join("waifu_ps_sort.txt");
-
-    if let Err(e) = fs::write(&top_file, args.top.to_string()) {
-        eprintln!("写入 waifu_ps_top.txt 失败：{e}");
-    }
-    if let Err(e) = fs::write(&sort_file, args.sort.trim()) {
-        eprintln!("写入 waifu_ps_sort.txt 失败：{e}");
-    }
+    println!(
+        "{}",
+        serde_json::json!({ "top": args.top, "sort": sort })
+    );
 
     // 尾巴（可选）
     // if let Some(foot) = lines.ps.footer.as_ref().and_then(|v| v.choose(&mut rand::thread_rng())) {
@@ -63,4 +59,6 @@ pub fn run_ps(args: PsArgs) {
     //     );
     //     if args.miao { speak(&foot.jp); }
     // }
+
+    Ok(())
 }

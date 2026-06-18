@@ -1,12 +1,9 @@
 use clap::Args;
 use rand::seq::SliceRandom;
-use std::env;
-use std::fs;
-use std::io;
 use std::path::Path;
 use rand::Rng;
 use crate::rainbow_mod::RAINBOW_STOPS;
-use crate::utils::{cat_face, load_waifu_lines, rainbow, speak};
+use crate::utils::{cat_face, load_waifu_lines, rainbow, speak, AppResult};
 
 /// 🏠 `waifu cd` 子命令参数
 #[derive(Args)]
@@ -19,8 +16,8 @@ pub struct CdArgs {
     pub miao: bool,
 }
 
-pub fn run_cd(args: CdArgs) -> io::Result<()> {
-    let lines = load_waifu_lines();
+pub fn run_cd(args: CdArgs) -> AppResult {
+    let lines = load_waifu_lines()?;
     let path = Path::new(&args.target);
     let path_str = args.target.clone();
     let offset = rand::thread_rng().gen_range(0..RAINBOW_STOPS.len() as u8);
@@ -31,13 +28,13 @@ pub fn run_cd(args: CdArgs) -> io::Result<()> {
             .cd
             .success
             .choose(&mut rand::thread_rng())
-            .expect("cd.success 文案为空");
+            .ok_or_else(|| "cd.success 文案为空".to_string())?;
 
         let line_cn = pool.cn.replace("{path}", &path_str);
         let line_jp = pool.jp.replace("{path}", &path_str);
 
         // 猫脸固定黄色，后半段做渐变
-        println!(
+        eprintln!(
             "{} {}",
             // cat_face(&lines).bright_yellow(),
             rainbow(cat_face(&lines), offset),
@@ -48,27 +45,25 @@ pub fn run_cd(args: CdArgs) -> io::Result<()> {
             speak(&line_jp);
         }
 
-        // ✅ 输出路径写入临时文件（shell 去读）
-        let tmp_path = env::temp_dir().join("waifu_cd_path.txt");
-        if let Err(e) = fs::write(&tmp_path, &path_str) {
-            eprintln!("写入临时文件失败：{}", e);
-        }
+        println!("{path_str}");
     } else {
         // ❌ 失败：撒娇输出
         let pool = lines
             .cd
             .fail
             .choose(&mut rand::thread_rng())
-            .expect("cd.fail 文案为空");
+            .ok_or_else(|| "cd.fail 文案为空".to_string())?;
 
         let line_cn = pool.cn.replace("{path}", &path_str);
         let line_jp = pool.jp.replace("{path}", &path_str);
 
-        println!("{} {}", rainbow(cat_face(&lines),0), rainbow(&line_cn, 0));
+        eprintln!("{} {}", rainbow(cat_face(&lines),0), rainbow(&line_cn, 0));
 
         if args.miao {
             speak(&line_jp);
         }
+
+        return Err(format!("目标目录不存在：{path_str}"));
     }
 
     Ok(())

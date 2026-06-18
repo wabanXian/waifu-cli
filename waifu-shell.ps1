@@ -7,110 +7,132 @@ Remove-Item Alias:cls -Force -ErrorAction SilentlyContinue
 Remove-Item Alias:ps -Force -ErrorAction SilentlyContinue
 
 function cd {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, Position = 0)]
+        [string]$Path,
+        [switch]$Miao
+    )
+
     $OutputEncoding = [System.Text.Encoding]::UTF8
-    $argStr = ($args -join " ") -replace '"', ''
-    # 直接 passthrough 调用 waifu，保持彩色 + 表情不变
-    waifu cd "$argStr"
-    # 从临时文件中读取路径
-    $targetFile = "$env:TEMP\waifu_cd_path.txt"
-    if (-not (Test-Path $targetFile)) {
-        Write-Host "喵呜~ 没找到 waifu 留下的目标路径文件欸…是不是出错了？"
+    $waifuArgs = @('cd')
+    if ($Miao) {
+        $waifuArgs += '--miao'
+    }
+    $waifuArgs += @('--', $Path)
+
+    $output = @(& waifu @waifuArgs)
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -ne 0) {
         return
     }
 
-    $target = Get-Content $targetFile -Raw
-    $target = $target.Trim()
-    Remove-Item $targetFile -Force -ErrorAction SilentlyContinue
-
-    if (Test-Path $target) {
-        Set-Location $target
-    } else {
-        Write-Host "路径不存在喵：$target"
+    if ($output.Count -ne 1 -or [string]::IsNullOrWhiteSpace([string]$output[0])) {
+        Write-Error "waifu cd 没有返回唯一有效的目标路径"
+        return
     }
+
+    $target = [string]$output[0]
+    if (-not (Test-Path -LiteralPath $target -PathType Container)) {
+        Write-Error "waifu cd 返回的目标目录无效：$target"
+        return
+    }
+
+    Set-Location -LiteralPath $target
 }
 
-# function ls {
-#     $OutputEncoding = [System.Text.Encoding]::UTF8
-
-#     # 先让 waifu 打个招呼
-#     waifu ls
-
-#     # 拿到 waifu 写的路径
-#     $targetFile = "$env:TEMP\waifu_ls_path.txt"
-#     if (-not (Test-Path $targetFile)) {
-#         Write-Host "喵呜~ 找不到 waifu 留下的路径喵…不执行 ls 了！" -ForegroundColor Red
-#         return
-#     }
-
-#     $target = Get-Content $targetFile -Raw
-#     $target = $target.Trim()
-#     Remove-Item $targetFile -Force -ErrorAction SilentlyContinue
-
-#     if (Test-Path $target) {
-#         # 真正列出内容（保留原始 ls 行为）
-#         Get-ChildItem $target
-#     } else {
-#         Write-Host "路径不存在喵：$target"
-#     }
-# }
 function ls {
+    [CmdletBinding()]
+    param(
+        [Parameter(Position = 0)]
+        [string]$Path = '.',
+        [switch]$Miao
+    )
+
     $OutputEncoding = [System.Text.Encoding]::UTF8
-    if ($args) {
-        waifu ls ($args -join " ") -replace '"', ''
-    } else {
-        waifu ls
+    $waifuArgs = @('ls')
+    if ($Miao) {
+        $waifuArgs += '--miao'
+    }
+    $waifuArgs += @('--', $Path)
+
+    $output = @(& waifu @waifuArgs)
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -ne 0) {
+        return
+    }
+    if ($output.Count -ne 1 -or [string]::IsNullOrWhiteSpace([string]$output[0])) {
+        Write-Error "waifu ls 没有返回唯一有效的目标路径"
+        return
     }
 
-    $file = "$env:TEMP\waifu_ls_path.txt"
-    if (Test-Path $file) {
-        $target = Get-Content $file -Raw | ForEach-Object { $_.Trim() }
-        Remove-Item $file -Force -ErrorAction SilentlyContinue
+    $target = [string]$output[0]
+    if (-not (Test-Path -LiteralPath $target -PathType Container)) {
+        Write-Error "waifu ls 返回的目标目录无效：$target"
+        return
+    }
 
-        if (Test-Path $target) {
-            $entries = Get-ChildItem $target
+    $entries = @(Get-ChildItem -LiteralPath $target)
 
-            # 🐱 喵喵标题头部
-            Write-Host ("{0,-6} {1,-6} {2,-30} {3,-16} {4,10}" -f "喵权", "喵类", "名字喵", "最后摸摸", "胖胖程度") -ForegroundColor Magenta
+    # 🐱 喵喵标题头部
+    Write-Host ("{0,-6} {1,-6} {2,-30} {3,-16} {4,10}" -f "喵权", "喵类", "名字喵", "最后摸摸", "胖胖程度") -ForegroundColor Magenta
 
-            foreach ($entry in $entries) {
-                # 🐾 权限翻译为喵语
-                $perm = if ($entry.PSIsContainer) {
-                    "ฅ喵~"
-                } elseif ($entry.Attributes.ToString().Contains("ReadOnly")) {
-                    "喵……"
-                } else {
-                    "喵呜~"
-                }
-
-                # 📁 or 📄 类型标识
-                $type = if ($entry.PSIsContainer) { "📁" } else { "📄" }
-
-                $name = $entry.Name
-                $time = $entry.LastWriteTime.ToString("yyyy-MM-dd HH:mm")
-                $size = if ($entry.PSIsContainer) { "" } else { "{0,8} B" -f $entry.Length }
-
-                Write-Host ("{0,-6} {1,-6} {2,-30} {3,-16} {4,10}" -f $perm, $type, $name, $time, $size)
-            }
-
-            Write-Host "`n(=^･ω･^=)ﾉ喵~ 总共有 $($entries.Count) 个文件宝宝在等你~" -ForegroundColor Cyan
+    foreach ($entry in $entries) {
+        # 🐾 权限翻译为喵语
+        $perm = if ($entry.PSIsContainer) {
+            "ฅ喵~"
+        } elseif ($entry.Attributes.ToString().Contains("ReadOnly")) {
+            "喵……"
         } else {
-            Write-Host "路径不存在喵：$target"
+            "喵呜~"
         }
-    } else {
-        Write-Host "喵呜~ 找不到 waifu 留下的路径喵…不执行 ls 了！" -ForegroundColor Red
+
+        # 📁 or 📄 类型标识
+        $type = if ($entry.PSIsContainer) { "📁" } else { "📄" }
+
+        $name = $entry.Name
+        $time = $entry.LastWriteTime.ToString("yyyy-MM-dd HH:mm")
+        $size = if ($entry.PSIsContainer) { "" } else { "{0,8} B" -f $entry.Length }
+
+        Write-Host ("{0,-6} {1,-6} {2,-30} {3,-16} {4,10}" -f $perm, $type, $name, $time, $size)
     }
+
+    Write-Host "`n(=^･ω･^=)ﾉ喵~ 总共有 $($entries.Count) 个文件宝宝在等你~" -ForegroundColor Cyan
 }
 
 function cat {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, Position = 0)]
+        [string]$Path,
+        [switch]$Miao
+    )
+
     $OutputEncoding = [System.Text.Encoding]::UTF8
-    $argStr = ($args -join " ") -replace '"', ''
-    waifu cat "$argStr"
+    $waifuArgs = @('cat')
+    if ($Miao) {
+        $waifuArgs += '--miao'
+    }
+    $waifuArgs += @('--', $Path)
+    & waifu @waifuArgs
 }
 
 function echo {
+    [CmdletBinding()]
+    param(
+        [switch]$Miao,
+        [Parameter(Position = 0, ValueFromRemainingArguments = $true)]
+        [string[]]$Message
+    )
+
     $OutputEncoding = [System.Text.Encoding]::UTF8
-    $argStr = ($args -join " ") -replace '"', ''
-    waifu echo "$argStr"
+    $waifuArgs = @('echo')
+    if ($Miao) {
+        $waifuArgs += '--miao'
+    }
+    $waifuArgs += '--'
+    $waifuArgs += $Message
+    & waifu @waifuArgs
 }
 
 function clear {
@@ -121,24 +143,15 @@ function cls {
     waifu clear
 }
 
-# 🐾 公用渲染：从 waifu 的 TEMP 或参数来取 Top/Sort，然后用原生 Get-Process 获取数据并喵化输出
+# 🐾 公用渲染：根据 Top/Sort，用原生 Get-Process 获取数据并喵化输出
 function Invoke-WaifuProcessList {
     param(
         [int]$Top = 10,
         [ValidateSet('cpu','mem','memory')]
-        [string]$Sort = 'cpu',
-        [switch]$FromWaifu  # 若为真，则优先读取 waifu 写入的 TEMP 参数
+        [string]$Sort = 'cpu'
     )
 
-    if ($FromWaifu) {
-        $topFile  = "$env:TEMP\waifu_ps_top.txt"
-        $sortFile = "$env:TEMP\waifu_ps_sort.txt"
-        if (Test-Path $topFile)  { $Top  = [int](Get-Content $topFile -Raw).Trim() }
-        if (Test-Path $sortFile) { $Sort = (Get-Content $sortFile -Raw).Trim().ToLower() }
-        Remove-Item $topFile,$sortFile -Force -ErrorAction SilentlyContinue
-    }
-
-    # 用模块限定名，避免和我们自定义的 Get-Process 函数递归
+    # 显式调用 PowerShell 原生 Get-Process 获取进程对象
     $procs = Microsoft.PowerShell.Management\Get-Process |
              Select-Object Id, ProcessName, CPU, WorkingSet
 
@@ -169,7 +182,8 @@ function Invoke-WaifuProcessList {
 }
 
 # =========================================================
-# ps：沿用你的套路——先让 waifu 撒娇并写 TEMP，再渲染
+# ps：先让 waifu 撒娇并返回参数，再渲染
+# waifu 化进程展示使用 ps；原生进程命令直接使用 Get-Process
 # 例如：waifu ps -t 20 -s mem --miao
 # =========================================================
 function ps {
@@ -187,69 +201,34 @@ function ps {
 
     $OutputEncoding = [System.Text.Encoding]::UTF8
 
+    $waifuArgs = @('ps')
+    if ($Miao) {
+        $waifuArgs += '--miao'
+    }
     if ($PSBoundParameters.ContainsKey('Top') -or $PSBoundParameters.ContainsKey('Sort')) {
-        # 用 -Top/-Sort 的情况：我们自己写临时参数（不依赖 clap 解析）
-        Set-Content -Path "$env:TEMP\waifu_ps_top.txt"  -Value $Top
-        Set-Content -Path "$env:TEMP\waifu_ps_sort.txt" -Value $Sort
-        if ($Miao) {
-            waifu ps --miao --top $Top --sort $Sort
-        } else {
-            waifu ps --top $Top --sort $Sort
-        }
+        $waifuArgs += @('--top', [string]$Top, '--sort', $Sort)
     } else {
-        # 纯转发短参：-t / -s 交给 waifu（clap）解析
-        if ($Miao) {
-            waifu ps --miao @Args
-        } else {
-            waifu ps @Args
-        }
+        $waifuArgs += $Args
     }
 
-    Invoke-WaifuProcessList -FromWaifu
-}
-
-# =========================================================
-# 覆盖 Get-Process：默认喵化（支持 -Top / -Sort），
-# 若需要“原汁原味”，用 -Raw 或传原生参数（转发到真 cmdlet）
-# 例：
-#   Get-Process                 # 喵化
-#   Get-Process -Top 15 -Sort mem
-#   Get-Process -Raw notepad    # 原生通道
-#   Get-Process -Raw -Id 1234
-# =========================================================
-function Get-Process {
-        [CmdletBinding()]
-    param(
-        [int]$Top = 10,
-        [ValidateSet('cpu','mem','memory')]
-        [string]$Sort = 'cpu',
-        [switch]$Miao,
-
-        # 让你也可以直接传原生短参：-t 20 -s mem
-        [Parameter(ValueFromRemainingArguments = $true)]
-        [string[]]$Args
-    )
-
-    $OutputEncoding = [System.Text.Encoding]::UTF8
-
-    if ($PSBoundParameters.ContainsKey('Top') -or $PSBoundParameters.ContainsKey('Sort')) {
-        # 用 -Top/-Sort 的情况：我们自己写临时参数（不依赖 clap 解析）
-        Set-Content -Path "$env:TEMP\waifu_ps_top.txt"  -Value $Top
-        Set-Content -Path "$env:TEMP\waifu_ps_sort.txt" -Value $Sort
-        if ($Miao) {
-            waifu ps --miao --top $Top --sort $Sort
-        } else {
-            waifu ps --top $Top --sort $Sort
-        }
-    } else {
-        # 纯转发短参：-t / -s 交给 waifu（clap）解析
-        if ($Miao) {
-            waifu ps --miao @Args
-        } else {
-            waifu ps @Args
-        }
+    $output = @(& waifu @waifuArgs)
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -ne 0) {
+        return
+    }
+    if ($output.Count -ne 1 -or [string]::IsNullOrWhiteSpace([string]$output[0])) {
+        Write-Error "waifu ps 没有返回唯一有效的参数结果"
+        return
     }
 
-    Invoke-WaifuProcessList -FromWaifu
+    try {
+        $result = [string]$output[0] | ConvertFrom-Json -ErrorAction Stop
+        $resultTop = [int]$result.top
+        $resultSort = [string]$result.sort
+    } catch {
+        Write-Error "无法解析 waifu ps 返回的参数：$_"
+        return
+    }
 
+    Invoke-WaifuProcessList -Top $resultTop -Sort $resultSort
 }

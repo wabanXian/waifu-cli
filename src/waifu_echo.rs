@@ -3,7 +3,7 @@ use rand::seq::SliceRandom;
 use rand::Rng;
 use std::io::{self, Write};
 
-use crate::utils::{cat_face, load_waifu_lines, rainbow, speak};
+use crate::utils::{cat_face, load_waifu_lines, rainbow, speak, AppResult};
 
 /// 🗣 `waifu echo` 子命令参数
 #[derive(Args)]
@@ -16,8 +16,8 @@ pub struct EchoArgs {
     pub miao: bool,
 }
 
-pub fn run_echo(args: EchoArgs) {
-    let lines = load_waifu_lines();
+pub fn run_echo(args: EchoArgs) -> AppResult {
+    let lines = load_waifu_lines()?;
     let text = args.message.join(" ").trim().to_string();
 
     // 随机彩虹起点（建议用你公开的 stops 长度；没有就给个宽松范围）
@@ -30,7 +30,7 @@ pub fn run_echo(args: EchoArgs) {
             .echo
             .sayings
             .choose(&mut rand::thread_rng())
-            .expect("echo.sayings 为空");
+            .ok_or_else(|| "echo.sayings 为空".to_string())?;
         (
             tpl.cn.replace("{text}", &text),
             tpl.jp.replace("{text}", &text),
@@ -41,10 +41,13 @@ pub fn run_echo(args: EchoArgs) {
     let mut stdout = io::stdout();
     let cat = rainbow(cat_face(&lines), offset);
     let msg = rainbow(&cn_line, offset);
-    writeln!(stdout, "{} {}", cat, msg).ok();
+    writeln!(stdout, "{} {}", cat, msg)
+        .map_err(|e| format!("写入标准输出失败：{e}"))?;
 
     // 语音（有就播，无就算了）
     if args.miao && !jp_line.trim().is_empty() {
         speak(&jp_line);
     }
+
+    Ok(())
 }

@@ -9,7 +9,7 @@ use crate::rainbow_mod::RAINBOW_STOPS;
 
 use ping_rs::{send_ping, PingOptions};
 
-use crate::utils::{cat_face, get_time_period, load_waifu_lines, rainbow, speak, VoiceLine};
+use crate::utils::{cat_face, get_time_period, load_waifu_lines, rainbow, speak, AppResult, VoiceLine};
 
 /// 🏓 `waifu ping` 子命令参数
 #[derive(Args)]
@@ -27,12 +27,12 @@ pub struct PingArgs {
 }
 
 /// 🏁 子命令入口
-pub fn run_ping(args: PingArgs) {
+pub fn run_ping(args: PingArgs) -> AppResult {
     println!("{}", "🌸 Waifu Ping 正在启动~".magenta().bold());
 
     let Some(ip) = resolve_host_to_ip(&args.target) else {
         eprintln!("{}", "呜呜……主人，找不到这个地址~ >_<".red());
-        return;
+        return Err(format!("无法解析目标地址：{}", args.target));
     };
 
     println!(
@@ -47,10 +47,10 @@ pub fn run_ping(args: PingArgs) {
 
         match ping_once(ip) {
             Ok(ms) => {
-                get_success_line(ms, ip, args.miao);
+                get_success_line(ms, ip, args.miao)?;
             }
             Err(_) => {
-                get_fail_line(args.miao);
+                get_fail_line(args.miao)?;
             }
         }
 
@@ -58,6 +58,7 @@ pub fn run_ping(args: PingArgs) {
     }
 
     println!("\n{}", "🌟 Waifu 任务结束~ 记得夸夸我嘛~".magenta());
+    Ok(())
 }
 
 /// 🌐 域名解析为 IP
@@ -82,20 +83,22 @@ fn ping_once(addr: IpAddr) -> Result<u32, String> {
 }
 
 /// ✅ ping 成功回应
-fn get_success_line(ms: u32, ip: IpAddr, with_voice: bool) -> String {
+fn get_success_line(ms: u32, ip: IpAddr, with_voice: bool) -> AppResult {
     let ip_str = ip.to_string();
     let ms_str = ms.to_string();
     let time = get_time_period();
 
-    let lines = load_waifu_lines();
+    let lines = load_waifu_lines()?;
     let pool = lines
         .ping
         .success
         .get(time)
         .or_else(|| lines.ping.success.get("default"))
-        .expect("没有找到成功语音");
+        .ok_or_else(|| "没有找到成功语音".to_string())?;
 
-    let VoiceLine { cn, jp } = pool.choose(&mut rand::thread_rng()).unwrap();
+    let VoiceLine { cn, jp } = pool
+        .choose(&mut rand::thread_rng())
+        .ok_or_else(|| "成功语音列表为空".to_string())?;
     let cn_line = cn.replace("{ip}", &ip_str).replace("{ms}", &ms_str);
     let jp_line = jp.replace("{ip}", &ip_str).replace("{ms}", &ms_str);
 
@@ -110,22 +113,24 @@ fn get_success_line(ms: u32, ip: IpAddr, with_voice: bool) -> String {
         speak(&jp_line);
     }
 
-    "".to_string()
+    Ok(())
 }
 
 /// ❌ ping 失败回应
-fn get_fail_line(with_voice: bool) -> String {
+fn get_fail_line(with_voice: bool) -> AppResult {
     let time = get_time_period();
 
-    let lines = load_waifu_lines();
+    let lines = load_waifu_lines()?;
     let pool = lines
         .ping
         .fail
         .get(time)
         .or_else(|| lines.ping.fail.get("default"))
-        .expect("没有找到失败语音");
+        .ok_or_else(|| "没有找到失败语音".to_string())?;
 
-    let VoiceLine { cn, jp } = pool.choose(&mut rand::thread_rng()).unwrap();
+    let VoiceLine { cn, jp } = pool
+        .choose(&mut rand::thread_rng())
+        .ok_or_else(|| "失败语音列表为空".to_string())?;
     let offset = rand::thread_rng().gen_range(0..6);
     println!("{} {}", cat_face(&lines).bright_red(), rainbow(cn, offset));
 
@@ -133,5 +138,5 @@ fn get_fail_line(with_voice: bool) -> String {
         speak(jp);
     }
 
-    "".to_string()
+    Ok(())
 }

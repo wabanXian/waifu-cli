@@ -5,7 +5,7 @@ use rand::Rng;
 use std::fs;
 use std::path::Path;
 
-use crate::utils::{cat_face, load_waifu_lines, rainbow, speak};
+use crate::utils::{cat_face, load_waifu_lines, rainbow, speak, AppResult};
 
 /// 🐱 `waifu cat` 子命令参数
 #[derive(Args)]
@@ -19,15 +19,15 @@ pub struct CatArgs {
 }
 
 /// 🏁 waifu cat 入口
-pub fn run_cat(args: CatArgs) {
-    let lines = load_waifu_lines();
+pub fn run_cat(args: CatArgs) -> AppResult {
+    let lines = load_waifu_lines()?;
     let p = Path::new(&args.path);
-    let offset = rand::thread_rng().gen_range(0..13); // 你自己的 stops 数量
+    let offset = rand::thread_rng().gen_range(0..13);
 
     if p.exists() && p.is_file() {
         // ✅ 成功撒娇文案（来自 waifu.json）
         let pool = lines.cat.success.choose(&mut rand::thread_rng())
-            .expect("cat.success 文案为空");
+            .ok_or_else(|| "cat.success 文案为空".to_string())?;
         let cn = pool.cn.replace("{path}", &args.path);
         let jp = pool.jp.replace("{path}", &args.path);
 
@@ -46,18 +46,18 @@ pub fn run_cat(args: CatArgs) {
             }
             Err(e) => {
                 let pool = lines.cat.fail.choose(&mut rand::thread_rng())
-                    .expect("cat.fail 文案为空");
+                    .ok_or_else(|| "cat.fail 文案为空".to_string())?;
                 let cn = pool.cn.replace("{path}", &args.path);
                 let jp = pool.jp.replace("{path}", &args.path);
-                eprintln!("{} {}", cat_face(&lines).bright_red(), rainbow(&format!("读取失败喵：{e}"), 3));
                 println!("{} {}", rainbow(cat_face(&lines), 2), rainbow(&cn, 2));
                 if args.miao { speak(&jp); }
+                return Err(format!("读取文件 {} 失败：{e}", args.path));
             }
         }
     } else {
         // ❌ 找不到文件
         let pool = lines.cat.fail.choose(&mut rand::thread_rng())
-            .expect("cat.fail 文案为空");
+            .ok_or_else(|| "cat.fail 文案为空".to_string())?;
         let cn = pool.cn.replace("{path}", &args.path);
         let jp = pool.jp.replace("{path}", &args.path);
 
@@ -67,5 +67,13 @@ pub fn run_cat(args: CatArgs) {
             rainbow(&cn, offset)
         );
         if args.miao { speak(&jp); }
+        let reason = if p.exists() {
+            "目标路径不是文件"
+        } else {
+            "目标文件不存在"
+        };
+        return Err(format!("{reason}：{}", args.path));
     }
+
+    Ok(())
 }

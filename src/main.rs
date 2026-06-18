@@ -9,6 +9,7 @@ mod waifu_clear;
 mod waifu_ps;
 
 use clap::{Parser, Subcommand};
+use std::process::ExitCode;
 
 #[derive(Parser)]
 #[command(name = "waifu", version, about = "会撒娇的终端工具箱 ✨")]
@@ -29,20 +30,23 @@ enum Commands {
     Ps(waifu_ps::PsArgs),
 }
 
-fn main() {
+fn main() -> ExitCode {
     let cli = Cli::parse();
 
-    match cli.command {
-        Commands::Ping(args) => waifu_ping::run_ping(args),
-        Commands::Cd(args) => {
-            if let Err(e) = waifu_cd::run_cd(args) {
-                eprintln!("cd 执行失败：{e}");
-            }
-        }
-        Commands::Ls(args) => waifu_ls::run_ls(args),
-        Commands::Cat(args)  => waifu_cat::run_cat(args),
-        Commands::Echo(args)  => waifu_echo::run_echo(args),
-        Commands::Clear(args)  => waifu_clear::run_clear(args),
-        Commands::Ps(args)  => waifu_ps::run_ps(args),
+    let (command, result) = match cli.command {
+        Commands::Ping(args) => ("ping", waifu_ping::run_ping(args)),
+        Commands::Cd(args) => ("cd", waifu_cd::run_cd(args)),
+        Commands::Ls(args) => ("ls", waifu_ls::run_ls(args)),
+        Commands::Cat(args) => ("cat", waifu_cat::run_cat(args)),
+        Commands::Echo(args) => ("echo", waifu_echo::run_echo(args)),
+        Commands::Clear(args) => ("clear", waifu_clear::run_clear(args)),
+        Commands::Ps(args) => ("ps", waifu_ps::run_ps(args)),
+    };
+
+    if let Err(error) = result {
+        eprintln!("{command} 执行失败：{error}");
+        return ExitCode::FAILURE;
     }
+
+    ExitCode::SUCCESS
 }

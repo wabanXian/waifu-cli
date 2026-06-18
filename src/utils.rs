@@ -7,6 +7,8 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
+pub type AppResult<T = ()> = Result<T, String>;
+
 /// 🌈 彩虹染色：每个字不同颜色（静态，多段渐变 7 色）
 pub fn rainbow(text: &str, base_offset: u8) -> String {
     rainbow_mod::rainbow(text, base_offset as usize)
@@ -33,11 +35,17 @@ pub fn cat_face(lines: &WaifuLines) -> &str {
 
 /// 🗣 播报日语台词（调用 speak.py）
 pub fn speak(japanese: &str) {
-    let exe_path = std::env::current_exe().unwrap();
+    let exe_path = match std::env::current_exe() {
+        Ok(path) => path,
+        Err(e) => {
+            eprintln!("🐍💥 无法定位语音脚本：{e}");
+            return;
+        }
+    };
     let script_path = exe_path.with_file_name("speak.py");
 
     match Command::new("python")
-        .arg(script_path.to_str().unwrap())
+        .arg(script_path)
         .arg(japanese)
         .output()
     {
@@ -126,9 +134,12 @@ pub struct WaifuLines {
 }
 
 /// 📦 加载 JSON 文件为 WaifuLines
-pub fn load_waifu_lines() -> WaifuLines {
-    let exe_path = std::env::current_exe().unwrap();
+pub fn load_waifu_lines() -> AppResult<WaifuLines> {
+    let exe_path = std::env::current_exe()
+        .map_err(|e| format!("无法定位当前程序：{e}"))?;
     let json_path: PathBuf = exe_path.with_file_name("waifu.json");
-    let raw = fs::read_to_string(json_path).expect("读取 waifu.json 失败");
-    serde_json::from_str(&raw).expect("解析 waifu.json 失败")
+    let raw = fs::read_to_string(&json_path)
+        .map_err(|e| format!("读取 {} 失败：{e}", json_path.display()))?;
+    serde_json::from_str(&raw)
+        .map_err(|e| format!("解析 {} 失败：{e}", json_path.display()))
 }

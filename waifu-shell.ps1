@@ -1,3 +1,58 @@
+$waifuScriptPath = if ($PSCommandPath) {
+    $PSCommandPath
+} else {
+    $MyInvocation.MyCommand.Path
+}
+$Script:WaifuProjectRoot = if ($waifuScriptPath) {
+    Split-Path -Parent $waifuScriptPath
+} else {
+    $null
+}
+
+function Resolve-WaifuExecutable {
+    if ($Script:WaifuProjectRoot) {
+        $candidates = @(
+            (Join-Path $Script:WaifuProjectRoot 'target\release\waifu.exe'),
+            (Join-Path $Script:WaifuProjectRoot 'target\debug\waifu.exe')
+        )
+        foreach ($candidate in $candidates) {
+            if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+                return $candidate
+            }
+        }
+    }
+
+    $command = Get-Command waifu -CommandType Application -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if ($command) {
+        return $command.Source
+    }
+
+    return $null
+}
+
+function Get-WaifuExecutable {
+    if (-not $Script:WaifuExe -or
+        -not (Test-Path -LiteralPath $Script:WaifuExe -PathType Leaf)) {
+        $Script:WaifuExe = Resolve-WaifuExecutable
+    }
+
+    if (-not $Script:WaifuExe) {
+        Write-Error 'waifu.exe not found. Run cargo build --release or check project path.'
+        return $null
+    }
+
+    return $Script:WaifuExe
+}
+
+$Script:WaifuExe = Resolve-WaifuExecutable
+
+function waifu {
+    $waifuExe = Get-WaifuExecutable
+    if (-not $waifuExe) { return }
+    & $waifuExe @args
+}
+
 Remove-Item Alias:cd -Force -ErrorAction SilentlyContinue
 Remove-Item Alias:ls -Force -ErrorAction SilentlyContinue
 Remove-Item Alias:cat -Force -ErrorAction SilentlyContinue
@@ -15,13 +70,15 @@ function cd {
     )
 
     $OutputEncoding = [System.Text.Encoding]::UTF8
+    $waifuExe = Get-WaifuExecutable
+    if (-not $waifuExe) { return }
     $waifuArgs = @('cd')
     if ($Miao) {
         $waifuArgs += '--miao'
     }
     $waifuArgs += @('--', $Path)
 
-    $output = @(& waifu @waifuArgs)
+    $output = @(& $waifuExe @waifuArgs)
     $exitCode = $LASTEXITCODE
     if ($exitCode -ne 0) {
         return
@@ -50,13 +107,15 @@ function ls {
     )
 
     $OutputEncoding = [System.Text.Encoding]::UTF8
+    $waifuExe = Get-WaifuExecutable
+    if (-not $waifuExe) { return }
     $waifuArgs = @('ls')
     if ($Miao) {
         $waifuArgs += '--miao'
     }
     $waifuArgs += @('--', $Path)
 
-    $output = @(& waifu @waifuArgs)
+    $output = @(& $waifuExe @waifuArgs)
     $exitCode = $LASTEXITCODE
     if ($exitCode -ne 0) {
         return
@@ -109,12 +168,14 @@ function cat {
     )
 
     $OutputEncoding = [System.Text.Encoding]::UTF8
+    $waifuExe = Get-WaifuExecutable
+    if (-not $waifuExe) { return }
     $waifuArgs = @('cat')
     if ($Miao) {
         $waifuArgs += '--miao'
     }
     $waifuArgs += @('--', $Path)
-    & waifu @waifuArgs
+    & $waifuExe @waifuArgs
 }
 
 function echo {
@@ -126,21 +187,27 @@ function echo {
     )
 
     $OutputEncoding = [System.Text.Encoding]::UTF8
+    $waifuExe = Get-WaifuExecutable
+    if (-not $waifuExe) { return }
     $waifuArgs = @('echo')
     if ($Miao) {
         $waifuArgs += '--miao'
     }
     $waifuArgs += '--'
     $waifuArgs += $Message
-    & waifu @waifuArgs
+    & $waifuExe @waifuArgs
 }
 
 function clear {
-    waifu clear
+    $waifuExe = Get-WaifuExecutable
+    if (-not $waifuExe) { return }
+    & $waifuExe clear
 }
 
 function cls {
-    waifu clear
+    $waifuExe = Get-WaifuExecutable
+    if (-not $waifuExe) { return }
+    & $waifuExe clear
 }
 
 # 🐾 公用渲染：根据 Top/Sort，用原生 Get-Process 获取数据并喵化输出
@@ -200,6 +267,8 @@ function ps {
     )
 
     $OutputEncoding = [System.Text.Encoding]::UTF8
+    $waifuExe = Get-WaifuExecutable
+    if (-not $waifuExe) { return }
 
     $waifuArgs = @('ps')
     if ($Miao) {
@@ -211,7 +280,7 @@ function ps {
         $waifuArgs += $Args
     }
 
-    $output = @(& waifu @waifuArgs)
+    $output = @(& $waifuExe @waifuArgs)
     $exitCode = $LASTEXITCODE
     if ($exitCode -ne 0) {
         return

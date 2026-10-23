@@ -59,7 +59,7 @@ function Get-WaifuCompletionCandidates {
             }
         }
     }
-    foreach ($value in @($options | Where-Object { $_ -like "$([WildcardPattern]::Escape($Word))*" } | Select-Object -Unique)) {
+    foreach ($value in @($options | Where-Object { $_ -like "$([System.Management.Automation.WildcardPattern]::Escape($Word))*" } | Select-Object -Unique)) {
         $replacement = if ($value.Contains(' ')) { "'" + $value.Replace("'", "''") + "'" } else { $value }
         [System.Management.Automation.CompletionResult]::new(
             $replacement, $value, 'ParameterValue', $value

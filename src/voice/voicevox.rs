@@ -366,7 +366,7 @@ impl Assets {
                     if path.is_dir() { Some(path) } else { None }
                 })
                 .ok_or_else(|| {
-                    format!("找不到 ONNX Runtime 目录：{}\onnxruntime\lib", core.display())
+                    format!("找不到 ONNX Runtime 目录：{}/onnxruntime/lib", core.display())
                 })?
         };
 

@@ -39,7 +39,7 @@ if (-not $KeepFiles -and (Test-Path -LiteralPath $InstallDir -PathType Container
     foreach ($name in @('waifu.exe','waifu.json','speak.py','waifu-shell.ps1',
         'waifu-completion.ps1','install.ps1','uninstall.ps1','update.ps1','README.md')) {
         $path = Join-Path $InstallDir $name
-        if (Test-Path -LiteralPath $path -PathType Leaf -and
+        if ((Test-Path -LiteralPath $path -PathType Leaf) -and
             $PSCmdlet.ShouldProcess($path, 'Delete installed waifu-cli file')) {
             Remove-Item -LiteralPath $path -Force
         }

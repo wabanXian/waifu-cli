@@ -158,6 +158,32 @@ $env:WAIFU_TTS_BACKEND = 'voicevox'
 
 旧 CeVIO 模式仍调用 exe 同级的 `speak.py`，需要 Python、pythonnet、CeVIO Host。Rust 的 VOICEVOX C API 模式不调用 Python。独立分发 waifu.exe 时仍要带上 `waifu.json`；CeVIO 模式还需要 `speak.py`。
 
+## 环境诊断：waifu doctor
+
+新安装、升级 VOICEVOX 模型或 CUDA 运行库时，可以先运行：
+
+```powershell
+waifu doctor
+```
+
+默认**不会加载 VOICEVOX DLL 或合成语音**，只做轻量检查：
+
+- `waifu.exe` 所在路径及 `waifu.json` 的读取、结构验证
+- 附近是否存在 `waifu-shell.ps1` 与 PATH 中的 PowerShell 程序（**不能**验证当前 PowerShell 会话是否加载了包装函数）
+- 所选的语音后端、VOICEVOX C API 版本文件夹
+- Open JTalk 词典、.vvm 模型与 Style ID、ONNX Runtime DLL 文件
+- CeVIO 兼容模式下的 `speak.py` 与 Python 可执行文件（不启动 Host）
+
+**注意：找到 CUDA 运行库、显卡或 DLL 并不证明 GPU 正在工作。** 要验证真实的执行模式，执行：
+
+```powershell
+waifu doctor --voice-test
+```
+
+`--voice-test` 会绕过 WAV 缓存实际初始化 VOICEVOX、合成一条日文测试语音（不播放声音），并调用官方 C API 的 `voicevox_synthesizer_is_gpu_mode` 反馈 GPU 或 CPU。该操作可能需要加载模型并等待一段时间；仅支持 Windows 版 VOICEVOX 后端，CeVIO 不使用这个选项。
+
+普通检查发现**可选语音资源缺失**仅报告提醒，不会让核心命令失效；`waifu.json` 错误或明确要求的语音合成测试失败时会返回非零退出码。CPU 合成成功视为合成有效，但报告提醒 GPU 未启用。
+
 ## 常用命令
 
 Ping 域名或 IP：

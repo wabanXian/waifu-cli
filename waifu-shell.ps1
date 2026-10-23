@@ -61,7 +61,7 @@ Remove-Item Alias:clear -Force -ErrorAction SilentlyContinue
 Remove-Item Alias:cls -Force -ErrorAction SilentlyContinue
 Remove-Item Alias:ps -Force -ErrorAction SilentlyContinue
 
-function cd {
+function Invoke-WaifuCd {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, Position = 0)]
@@ -98,7 +98,7 @@ function cd {
     Set-Location -LiteralPath $target
 }
 
-function ls {
+function Invoke-WaifuLs {
     [CmdletBinding()]
     param(
         [Parameter(Position = 0)]
@@ -159,7 +159,7 @@ function ls {
     Write-Host "`n(=^･ω･^=)ﾉ喵~ 总共有 $($entries.Count) 个文件宝宝在等你~" -ForegroundColor Cyan
 }
 
-function cat {
+function Invoke-WaifuCat {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, Position = 0)]
@@ -178,7 +178,7 @@ function cat {
     & $waifuExe @waifuArgs
 }
 
-function echo {
+function Invoke-WaifuEcho {
     [CmdletBinding()]
     param(
         [switch]$Miao,
@@ -198,13 +198,13 @@ function echo {
     & $waifuExe @waifuArgs
 }
 
-function clear {
+function Invoke-WaifuClear {
     $waifuExe = Get-WaifuExecutable
     if (-not $waifuExe) { return }
     & $waifuExe clear
 }
 
-function cls {
+function Invoke-WaifuCls {
     $waifuExe = Get-WaifuExecutable
     if (-not $waifuExe) { return }
     & $waifuExe clear
@@ -253,7 +253,7 @@ function Invoke-WaifuProcessList {
 # waifu 化进程展示使用 ps；原生进程命令直接使用 Get-Process
 # 例如：waifu ps -t 20 -s mem --miao
 # =========================================================
-function ps {
+function Invoke-WaifuPs {
     [CmdletBinding()]
     param(
         [int]$Top = 10,
@@ -300,4 +300,79 @@ function ps {
     }
 
     Invoke-WaifuProcessList -Top $resultTop -Sort $resultSort
+}
+
+# Use -Raw (or -raw) to forward arguments to the original PowerShell command.
+# These public wrappers intentionally omit [CmdletBinding()] so that @args
+# retains native named parameters such as -Force, -Tail, and -Name.
+# Without -Raw, the existing waifu implementations stay unchanged.
+
+function cd {
+    param([switch]$Raw)
+
+    if ($Raw) {
+        Microsoft.PowerShell.Management\Set-Location @args
+    } else {
+        Invoke-WaifuCd @args
+    }
+}
+
+function ls {
+    param([switch]$Raw)
+
+    if ($Raw) {
+        Microsoft.PowerShell.Management\Get-ChildItem @args
+    } else {
+        Invoke-WaifuLs @args
+    }
+}
+
+function cat {
+    param([switch]$Raw)
+
+    if ($Raw) {
+        Microsoft.PowerShell.Management\Get-Content @args
+    } else {
+        Invoke-WaifuCat @args
+    }
+}
+
+function echo {
+    param([switch]$Raw)
+
+    if ($Raw) {
+        Microsoft.PowerShell.Utility\Write-Output @args
+    } else {
+        Invoke-WaifuEcho @args
+    }
+}
+
+function clear {
+    param([switch]$Raw)
+
+    if ($Raw) {
+        Clear-Host @args
+    } else {
+        Invoke-WaifuClear @args
+    }
+}
+
+function cls {
+    param([switch]$Raw)
+
+    if ($Raw) {
+        Clear-Host @args
+    } else {
+        Invoke-WaifuCls @args
+    }
+}
+
+function ps {
+    param([switch]$Raw)
+
+    if ($Raw) {
+        Microsoft.PowerShell.Management\Get-Process @args
+    } else {
+        Invoke-WaifuPs @args
+    }
 }

@@ -274,6 +274,12 @@ The optional test initializes VOICEVOX, synthesizes an uncached Japanese sample 
 
 Missing optional voice resources are warnings for the default doctor command, not blockers for the basic CLI.
 
+## License
+
+The original project source code and documentation are available under the **[MIT License](LICENSE)**. You may use, modify, and redistribute the project, including commercially, provided that the copyright and license notices are preserved. The software is provided *as is*, without warranty. **Copyright (c) 2026 wabanXian.**
+
+**Third-party components and content are not relicensed under this MIT License.** VOICEVOX CORE, voice models/characters, ONNX Runtime, CUDA/cuDNN, CeVIO, and Rust/Python dependencies have their own licenses or terms. The release archive does not include VOICEVOX models or CUDA runtime assets.
+
 ## CI, releases, and roadmap
 
 Windows GitHub Actions run `cargo check --locked`, `cargo test --locked`, Clippy, release builds, and PowerShell installer/completion checks. The release workflow builds a Windows x64 ZIP and accompanying SHA-256 checksum file. It is triggered by `v*` tags and also supports explicit `release: vX.Y.Z` commits on `master`.

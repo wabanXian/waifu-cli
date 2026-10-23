@@ -15,6 +15,9 @@ extern "system" {
     fn LoadLibraryExW(path: *const u16, file: *mut c_void, flags: u32) -> *mut c_void;
     fn GetProcAddress(module: *mut c_void, proc_name: *const c_char) -> *const c_void;
     fn FreeLibrary(module: *mut c_void) -> i32;
+    fn AddDllDirectory(new_directory: *const u16) -> *mut c_void;
+    fn RemoveDllDirectory(cookie: *mut c_void) -> i32;
+    fn SetDefaultDllDirectories(directory_flags: u32) -> i32;
 }
 #[link(name = "winmm")]
 extern "system" {
@@ -71,6 +74,46 @@ type TtsDefault = unsafe extern "C" fn() -> TtsOptions;
 type Tts = unsafe extern "C" fn(*const c_void, *const c_char, u32, TtsOptions, *mut usize, *mut *mut u8) -> ResultCode;
 type BytesFree = unsafe extern "C" fn(*mut u8);
 type ErrorMessage = unsafe extern "C" fn(ResultCode) -> *const c_char;
+
+/// Register GPU runtime dependency folders without editing the system PATH.
+/// Kept alive for the duration of synthesis and DLL unload.
+struct DllDirectories(Vec<Ptr>);
+
+impl DllDirectories {
+    fn register(paths: &[PathBuf]) -> Result<Self, String> {
+        let mut dirs = Self(Vec::new());
+        if unsafe { SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS) } == 0 {
+            return Err(format!(
+                "无法配置 Windows DLL 搜索路径：{}",
+                std::io::Error::last_os_error()
+            ));
+        }
+        for path in paths {
+            if !path.is_dir() { continue; }
+            let absolute = fs::canonicalize(path)
+                .map_err(|e| format!("无法解析 DLL 目录 {}：{e}", path.display()))?;
+            let wide: Vec<u16> = absolute.as_os_str().encode_wide().chain(Some(0)).collect();
+            let cookie = unsafe { AddDllDirectory(wide.as_ptr()) };
+            if cookie.is_null() {
+                return Err(format!(
+                    "无法添加 DLL 搜索目录 {}：{}",
+                    absolute.display(),
+                    std::io::Error::last_os_error()
+                ));
+            }
+            dirs.0.push(cookie);
+        }
+        Ok(dirs)
+    }
+}
+
+impl Drop for DllDirectories {
+    fn drop(&mut self) {
+        for cookie in self.0.drain(..).rev() {
+            unsafe { RemoveDllDirectory(cookie); }
+        }
+    }
+}
 
 struct Library(Ptr);
 
@@ -191,6 +234,7 @@ struct Assets {
     core: PathBuf,
     dll: PathBuf,
     ort_dir: PathBuf,
+    additional_dll_dirs: Vec<PathBuf>,
     dict: PathBuf,
     model: PathBuf,
     style: u32,
@@ -305,18 +349,44 @@ impl Assets {
             return Err(format!("VOICEVOX 模型不存在：{}", model.display()));
         }
 
-        let ort_dir = bases.iter().find_map(|base| {
-            let path = base.join("onnxruntime/lib");
-            if path.is_dir() { Some(path) } else { None }
-        }).ok_or_else(|| {
-            format!("找不到 ONNX Runtime 目录：{}\\onnxruntime\\lib", core.display())
-        })?;
+        // Prefer the official Downloader runtime over an older CPU-only DLL
+        // stored next to the C API versioned folder.
+        let ort_dir = if let Some(custom) = env::var_os("WAIFU_VOICEVOX_ORT_DIR") {
+            let path = PathBuf::from(custom);
+            let path = if path.is_absolute() { path } else { root.join(path) };
+            if !path.is_dir() {
+                return Err(format!("指定的 ONNX Runtime 目录不存在：{}", path.display()));
+            }
+            path
+        } else {
+            [root.join("voicevox_core"), core.clone(), root.clone()]
+                .iter()
+                .find_map(|base| {
+                    let path = base.join("onnxruntime/lib");
+                    if path.is_dir() { Some(path) } else { None }
+                })
+                .ok_or_else(|| {
+                    format!("找不到 ONNX Runtime 目录：{}\onnxruntime\lib", core.display())
+                })?
+        };
+
+        // CUDA/cuDNN and DirectML dependencies are in additional_libraries.
+        let mut additional_dll_dirs = vec![ort_dir.clone()];
+        if let Some(parent) = dll.parent() {
+            additional_dll_dirs.push(parent.to_path_buf());
+        }
+        for base in &bases {
+            let path = base.join("additional_libraries");
+            if path.is_dir() && !additional_dll_dirs.contains(&path) {
+                additional_dll_dirs.push(path);
+            }
+        }
         let style = env::var("WAIFU_VOICEVOX_STYLE_ID")
             .unwrap_or_else(|_| "0".into())
             .parse::<u32>()
             .map_err(|_| "WAIFU_VOICEVOX_STYLE_ID 必须是非负整数".to_string())?;
 
-        Ok(Self { core, dll, ort_dir, dict, model, style })
+        Ok(Self { core, dll, ort_dir, additional_dll_dirs, dict, model, style })
     }
 }
 
@@ -359,6 +429,9 @@ fn play_wav(wav: &[u8]) -> Result<(), String> {
 }
 
 fn synthesize(assets: &Assets, text: &str) -> Result<Vec<u8>, String> {
+    // Register GPU libraries for this process only; they may be loaded on demand
+    // by the ONNX Runtime execution provider after the main DLL is loaded.
+    let _dll_dirs = DllDirectories::register(&assets.additional_dll_dirs)?;
     let lib = Library::open(&assets.dll)?;
     let api = unsafe { Api::load(&lib)? };
     let mut resources = Resources {

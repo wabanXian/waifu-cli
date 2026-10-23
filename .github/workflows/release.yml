@@ -84,6 +84,7 @@ jobs:
             $subject = (git log -1 --format=%s).Trim()
             $releaseMatch = [regex]::Match($subject, '^release: (v[0-9]+[.][0-9]+[.][0-9]+)\z')
             if (-not $releaseMatch.Success) {
+              throw "Invalid release commit message: $subject"
             }
             $tag = $releaseMatch.Groups[1].Value
           }

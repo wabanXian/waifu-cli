@@ -40,7 +40,8 @@ jobs:
             @{From='uninstall.ps1'; To='uninstall.ps1'},
             @{From='update.ps1'; To='update.ps1'},
             @{From='README.md'; To='README.md'},
-            @{From='README_EN.md'; To='README_EN.md'}
+            @{From='README_EN.md'; To='README_EN.md'},
+            @{From='LICENSE'; To='LICENSE'}
           )
           foreach ($f in $files) {
             Copy-Item -LiteralPath $f.From -Destination (Join-Path '.\dist\package' $f.To) -ErrorAction Stop

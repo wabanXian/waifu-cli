@@ -95,7 +95,7 @@ if (-not $NoProfile) {
             Copy-Item -LiteralPath $profilePath -Destination $backup
             Write-Host "🐾 已备份 PowerShell Profile：$backup"
         }
-        [System.IO.File]::WriteAllText($profilePath, $updated, [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText($profilePath, $updated, [System.Text.UTF8Encoding]::new($true))
     }
 }
 Write-Host "🌸 waifu-cli 安装完成：$InstallDir"

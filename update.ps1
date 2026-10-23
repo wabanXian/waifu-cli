@@ -75,7 +75,7 @@ try {
     Copy-Item -LiteralPath (Join-Path $installDir 'waifu.exe') -Destination $previous -Force
     try {
         foreach ($file in @('waifu.exe','waifu.json','speak.py','waifu-shell.ps1',
-                'waifu-completion.ps1','install.ps1','uninstall.ps1','update.ps1','README.md')) {
+                'waifu-completion.ps1','install.ps1','uninstall.ps1','update.ps1','README.md','README_EN.md')) {
             $from = Join-Path $unpack $file
             if (Test-Path -LiteralPath $from -PathType Leaf) {
                 Copy-Item -LiteralPath $from -Destination (Join-Path $installDir $file) -Force

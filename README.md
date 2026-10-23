@@ -52,61 +52,77 @@ $env:PATH = "$waifuDir;$env:PATH"
 
 ## 可选语音功能
 
-`--miao` 和 PowerShell 的 `-Miao` 通过 `speak.py` 播放对应的日语台词，中文台词仍在终端显示。语音后端可选，**不启用语音也能正常使用 CLI**。
+`--miao`（以及 PowerShell 的 `-Miao`）播报 `src/waifu.json` 中的日文台词。默认后端是 **Rust 直接调用 VOICEVOX CORE C API（Windows x64）**，不需要 Python wheel、VOICEVOX 编辑器常驻或修改全局 PATH。不使用 `--miao` 时不会加载语音引擎。
 
-### VOICEVOX CORE（无需常驻编辑器）
+### 解压位置：自动识别版本号
 
-`VOICEVOX CORE` 使用官方 Python API（wheel）直接在命令调用时合成并播放日语语音，不需要启动 VOICEVOX 编辑器或 HTTP 引擎。
-
-请按 [VOICEVOX CORE 官方指南](https://github.com/VOICEVOX/voicevox_core/blob/main/docs/guide/user/usage.md) 安装**匹配 Python、系统架构的 wheel**，并下载配套的 VOICEVOX ONNX Runtime、Open JTalk 词典和 `.vvm` 声音模型。仅下载 C API DLL 不代表已经安装 Python API。
-
-下载资源例如放在：
+把官方 Windows x64 的 C API 压缩包解压到**项目根目录**，文件夹名保持 `voicevox_core-windows-x64-版本号`：
 
 ```text
-D:\VoicevoxCore\
-├── onnxruntime\lib\...
-├── dict\open_jtalk_dic_utf_8-1.11\...
-└── models\vvms\0.vvm
+waifu-ping/
+├── Cargo.toml
+├── voicevox_core-windows-x64-0.17.1/   # 示例；实际版本不固定
+│   ├── lib/
+│   │   └── voicevox_core.dll
+│   └── include/
+├── target/
+│   └── release/
+│       └── waifu.exe
+└── ...
 ```
 
-PowerShell 中检查 Python API：
+程序会扫描 `voicevox_core-windows-x64-*`，优先选择版本号最高且含 DLL 的文件夹；`lib/voicevox_core.dll`、`c_api/lib/voicevox_core.dll` 和文件夹根目录下的 DLL 都支持。不依赖 PowerShell 当前工作目录；会从 exe 位置向上定位项目。自定义位置可以设置 `WAIFU_PROJECT_ROOT` 指向项目根目录。
 
-```powershell
-python -c "from voicevox_core.blocking import Onnxruntime, OpenJtalk, Synthesizer, VoiceModelFile; print('VOICEVOX Python API OK')"
+**C API DLL 不包含声音！** 还需要 VOICEVOX ONNX Runtime、Open JTalk 日语词典与 .vvm 声音模型。这些资源可放在上述版本文件夹下，也支持放在项目根目录的 `voicevox_core/` 文件夹中（官方 Downloader 常见布局）：
+
+```text
+waifu-ping/
+├── voicevox_core-windows-x64-0.17.1/
+│   └── lib/voicevox_core.dll
+└── voicevox_core/
+    ├── onnxruntime/lib/...
+    ├── dict/open_jtalk_dic_utf_8-1.11/...
+    └── models/vvms/0.vvm
 ```
 
-然后配置当前终端会话（目录请改成你实际安装的位置）：
+如果模型、词典或运行库没找到，错误信息会指出缺少哪个目录或文件。
+
+### 本地测试
 
 ```powershell
-$env:WAIFU_TTS_BACKEND = 'voicevox'
-$env:WAIFU_VOICEVOX_HOME = 'D:\VoicevoxCore'
+cd D:\BaiduNetdiskDownload\waifu-ping
+git pull origin master
+cargo build --release --locked
+
+# 默认语音后端就是 Voicevox 的 C API
+waifu ping 1.1.1.1 --miao
+
+# 可选：指定语音风格 ID，需要与模型匹配
 $env:WAIFU_VOICEVOX_STYLE_ID = '0'
 
-# 仅检查依赖和路径，不合成语音
-python .\target\release\speak.py --check
-
-# 测试发声
-python .\target\release\speak.py 'こんにちは、ご主人様！'
-
-# 原有命令无需改动
-waifu ping 1.1.1.1 --miao
+# 可选：指定模型（支持相对项目根目录或绝对路径）
+$env:WAIFU_VOICEVOX_MODEL = 'voicevox_core\models\vvms\0.vvm'
 ```
 
-若资源不在默认位置，可使用 `WAIFU_VOICEVOX_MODEL` 指定 `.vvm` 文件路径。声音风格 ID 必须属于加载的模型；示例 `0` 不一定适用于你下载的每个模型。
+未指定模型时，先查找版本文件夹中的 .vvm，再找根目录同级的 `voicevox_core/models/vvms`；默认选编号最小的模型。默认风格 ID 为 0，如果选中的模型不支持它，请修改 `WAIFU_VOICEVOX_STYLE_ID`。
 
-第一次播放新台词时需加载模型并进行合成，速度可能较慢。后续相同台词与模型组合会直接播放 `%LOCALAPPDATA%\waifu-cli\voice-cache` 下的 WAV 缓存，无需再次初始化 CORE。可用 `WAIFU_VOICE_CACHE_DIR` 自定义缓存目录。当前音频播放使用 Windows 自带的 `winsound`。
+新台词第一次合成会加载模型，可能有短暂延迟；之后相同台词可直接使用 `%LOCALAPPDATA%\waifu-cli\voice-cache` 中缓存的 WAV。可通过 `WAIFU_VOICE_CACHE_DIR` 指定其他缓存位置。声音播放会等待完成；语音失败不会中断命令核心功能。
 
-`python` 必须指向安装了 `voicevox_core` wheel 的那个 Python 环境；如果你使用虚拟环境，请在激活后启动 CLI。脚本不会自动下载大型模型或把它们打包进 `waifu.exe`，发行时请遵守对应声音模型与角色的使用条款。
+请遵守所使用声音模型与角色的授权规则，尤其在对外分发模型或合成音频时。
 
-### 原 CeVIO 后端
+### 旧 CeVIO 兼容模式
 
-默认仍是 `cevio`，以兼容已有安装：
+想继续使用 さとうささら 的 CeVIO 声音，手动选择：
 
 ```powershell
 $env:WAIFU_TTS_BACKEND = 'cevio'
+waifu ping 1.1.1.1 --miao
+
+# 再切回无需 Python 的 Voicevox C API
+$env:WAIFU_TTS_BACKEND = 'voicevox'
 ```
 
-原 CeVIO 模式仍要求 Python、`pythonnet`、CeVIO AI 及 “さとうささら” 声音资源。调用时如未启动 Host，脚本会尝试启动。音频播放期间 CLI 命令会等待播放结束；语音失败不会改变原始 CLI 命令的执行结果。
+旧 CeVIO 模式仍调用 exe 同级的 `speak.py`，需要 Python、pythonnet、CeVIO Host。Rust 的 VOICEVOX C API 模式不调用 Python。独立分发 waifu.exe 时仍要带上 `waifu.json`；CeVIO 模式还需要 `speak.py`。
 
 ## 常用命令
 

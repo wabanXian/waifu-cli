@@ -110,6 +110,40 @@ $env:WAIFU_VOICEVOX_MODEL = 'voicevox_core\models\vvms\0.vvm'
 
 请遵守所使用声音模型与角色的授权规则，尤其在对外分发模型或合成音频时。
 
+### 启用 NVIDIA RTX 显卡（CUDA）
+
+若日志显示 `CUDA ... 現在ロードされているONNX Runtimeでは利用できません`，表示当前载入的 ONNX Runtime 是不支持 CUDA 的版本；只切换加速选项无法解决。需要通过 [官方 Downloader](https://github.com/VOICEVOX/voicevox_core/blob/main/docs/guide/user/downloader.md) 下载 **CUDA 版 ONNX Runtime** 和 **additional-libraries**。
+
+在项目根目录、已有 `download.exe` 的情况下执行：
+
+```powershell
+# 之前遇到匿名 API 限流时使用已登录的 GitHub CLI
+$env:GH_TOKEN = gh auth token
+
+# 只下载 CUDA 的运行库与依赖，不重复下载模型
+.\download.exe --devices cuda --only onnxruntime additional-libraries -o .\voicevox_core
+
+# 不必修改系统 PATH
+$env:WAIFU_TTS_BACKEND = 'voicevox'
+cargo build --release --locked
+.\target\release\waifu.exe ping 1.1.1.1 --miao
+
+# 下载结束后清除终端环境变量中的临时令牌
+Remove-Item Env:GH_TOKEN
+```
+
+更新后的加载顺序优先选择 `voicevox_core/onnxruntime/lib` 下的官方 Downloader 运行库。程序会将 `voicevox_core/additional_libraries` 与 ONNX Runtime 所在目录注册到当前进程的 Windows DLL 搜索路径，**无需全局修改 PATH**。默认初始化选项为 AUTO，当 GPU 后端可用且测试成功时 CORE 会选择 GPU。
+
+如果有多个 ONNX Runtime 目录，可以明确指定一个：
+
+```powershell
+$env:WAIFU_VOICEVOX_ORT_DIR = 'D:\BaiduNetdiskDownload\waifu-ping\voicevox_core\onnxruntime\lib'
+```
+
+这只指定运行库所在目录，不是模型目录；`WAIFU_VOICEVOX_MODEL` 仍负责选择 .vvm。CUDA 运行可能依赖对应版本的 NVIDIA 驱动、CUDA 和 cuDNN 库，Downloader 的 `additional_libraries` 负责提供项目需要的一部分 DLL。
+
+注意：已缓存的台词只播放 WAV，不会再触发 GPU 合成。如果想验证 GPU 日志，请使用一条尚未缓存的语音，或自行清空 `%LOCALAPPDATA%\waifu-cli\voice-cache` 中的 WAV。
+
 ### 旧 CeVIO 兼容模式
 
 想继续使用 さとうささら 的 CeVIO 声音，手动选择：

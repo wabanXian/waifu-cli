@@ -67,12 +67,10 @@ function Get-WaifuCompletionCandidates {
     }
 }
 
-Register-ArgumentCompleter -CommandName 'waifu' -ScriptBlock {
-    param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-    Get-WaifuCompletionCandidates -Word $wordToComplete -Ast $commandAst
-}
-
-Register-ArgumentCompleter -Native -CommandName 'waifu.exe' -ScriptBlock {
+# Without -ParameterName, PowerShell treats -CommandName completions as
+# native completions, including a thin wrapper function that forwards to an EXE.
+# Use the native three-argument signature for BOTH commands.
+Register-ArgumentCompleter -Native -CommandName @('waifu','waifu.exe') -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
     Get-WaifuCompletionCandidates -Word $wordToComplete -Ast $commandAst
 }

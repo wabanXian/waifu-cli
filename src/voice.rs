@@ -5,6 +5,16 @@
 mod voicevox;
 
 #[cfg(windows)]
+pub(crate) fn inspect_voicevox() -> Vec<(String, String, bool)> {
+    voicevox::inspect()
+}
+
+#[cfg(windows)]
+pub(crate) fn probe_voicevox_gpu() -> Result<bool, String> {
+    voicevox::probe_gpu_mode()
+}
+
+#[cfg(windows)]
 pub fn speak(japanese: &str) {
     let backend = std::env::var("WAIFU_TTS_BACKEND")
         .unwrap_or_else(|_| "voicevox".into())

@@ -50,6 +50,66 @@ $env:PATH = "$waifuDir;$env:PATH"
 
 脚本会提供 `cd`、`ls`、`cat`、`echo`、`clear`、`cls` 和 `ps` 等 waifu 化入口。`Get-Process` 始终保持为 PowerShell 原生命令；waifu 化进程列表请使用 `ps`。
 
+## 发行、安装、更新和卸载（Windows）
+
+`master` 每次提交和 PR 都由 [Windows CI](https://github.com/wabanXian/waifu-cli/actions/workflows/ci.yml) 执行 `cargo check`、`cargo test`、Clippy 和 Windows Release 构建，并上传 CI 构建产物。推送 `v*` 标签时，独立的 [Release 工作流](https://github.com/wabanXian/waifu-cli/actions/workflows/release.yml) 会生成 `waifu-windows-x64.zip`、`SHA256SUMS.txt` 并尝试创建 GitHub Release。
+
+### 安装
+
+两种安装方式：
+
+- 下载并解压正式 [GitHub Release](https://github.com/wabanXian/waifu-cli/releases) 的 `waifu-windows-x64.zip`，在解压目录执行 `.\install.ps1`。
+- 开发者从源码构建完成后，直接在项目根目录执行 `.\install.ps1`。
+
+```powershell
+# 源码模式请先执行 cargo build --release --locked
+.\install.ps1
+
+# 如不希望自动编辑 Profile / PATH：
+.\install.ps1 -NoProfile -NoPath
+```
+
+默认安装到当前用户的 `%LOCALAPPDATA%\Programs\waifu-cli`，将目录添加到**用户** PATH，并为执行安装时使用的 PowerShell Profile 写入一个带标记的自动加载片段。修改 Profile 前会备份；重复运行不会无限追加脚本片段。重新打开 PowerShell 后，原有 `-Raw` 包装与 Tab 补全一并生效。
+
+VOICEVOX CORE、词典、CUDA 库和声音模型仍然**不打包发布**。如果模型保留在原项目目录，请配置资源根路径，例如：
+
+```powershell
+[Environment]::SetEnvironmentVariable('WAIFU_PROJECT_ROOT', 'D:\path\to\waifu-ping', 'User')
+# 重新打开终端后生效
+```
+
+### 更新与卸载
+
+```powershell
+# 仅针对已安装的 waifu-cli，从最新正式 GitHub Release 更新
+waifu update
+
+# 离线更新：本地拥有官方发行 ZIP + SHA256SUMS.txt
+& "$env:LOCALAPPDATA\Programs\waifu-cli\update.ps1" `
+    -PackagePath 'D:\Downloads\waifu-windows-x64.zip' `
+    -ChecksumPath 'D:\Downloads\SHA256SUMS.txt'
+
+# 卸载前先预览修改，确认后执行
+& "$env:LOCALAPPDATA\Programs\waifu-cli\uninstall.ps1" -WhatIf
+& "$env:LOCALAPPDATA\Programs\waifu-cli\uninstall.ps1"
+```
+
+更新脚本在覆盖现有文件前校验 ZIP 的 SHA256；`waifu update` 会启动单独的 PowerShell 更新程序，避免覆盖正在运行的 exe。只有正式 Release 出现之后，`waifu update` 的在线功能才可使用。离线更新需要对应的校验文件。
+
+卸载只删除安装器管理的 Profile 片段、用户 PATH 项和已知应用文件，不递归删除文件夹里的其他内容。VOICEVOX 模型与声音缓存不会被清理。
+
+## Git 猫娘助手与命令补全
+
+```powershell
+waifu git status
+waifu git log
+waifu git log --count 5
+```
+
+这两个 Git 子命令**只读**，不代替原生 `git`，也不会自动提交、推送或修改仓库；会保留未提交变动的 Git 简要状态输出。
+
+通过 `waifu-shell.ps1` 加载 `waifu-completion.ps1` 后，PowerShell Tab 可补全 `waifu` 子命令、常用参数、`git` 子命令、`doctor --voice-test` 和常见路径。补全只作用于 `waifu` 和 `waifu.exe`，不改变 `cd -Raw`、`ls -Raw` 等既有原生转发行为。
+
 ## 可选语音功能
 
 `--miao`（以及 PowerShell 的 `-Miao`）播报 `src/waifu.json` 中的日文台词。默认后端是 **Rust 直接调用 VOICEVOX CORE C API（Windows x64）**，不需要 Python wheel、VOICEVOX 编辑器常驻或修改全局 PATH。不使用 `--miao` 时不会加载语音引擎。

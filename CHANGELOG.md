@@ -19,3 +19,4 @@
 - 下载 `waifu-windows-x64.zip` 后解压，执行 `.\waifu.exe doctor` 和 `.\install.ps1`。
 - 语音模型、词典、ONNX Runtime 和 CUDA/cuDNN DLL **不包含**在发行 ZIP 中，需自行安装并遵守原始许可。
 - 后续声线与人格系统见 [Issue #7](https://github.com/wabanXian/waifu-cli/issues/7)。
+- 二进制发行物由 Windows GitHub Actions 从版本提交构建并附带 SHA-256 校验文件。

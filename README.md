@@ -52,14 +52,61 @@ $env:PATH = "$waifuDir;$env:PATH"
 
 ## 可选语音功能
 
-`--miao` 会调用 `speak.py` 播放日语台词。该功能是可选的，需要：
+`--miao` 和 PowerShell 的 `-Miao` 通过 `speak.py` 播放对应的日语台词，中文台词仍在终端显示。语音后端可选，**不启用语音也能正常使用 CLI**。
 
-- Python，并可通过 `python` 命令启动
-- `pythonnet`（提供 `clr` 模块）
-- CeVIO AI，以及默认安装位置中的 `CeVIO.Talk.RemoteService2.dll`
-- CeVIO 角色“さとうささら”
+### VOICEVOX CORE（无需常驻编辑器）
 
-语音依赖缺失或播放失败时只会报告错误，不会使主要命令失败。未安装这些依赖时不要传递 `--miao` 或 PowerShell 的 `-Miao` 即可。
+`VOICEVOX CORE` 使用官方 Python API（wheel）直接在命令调用时合成并播放日语语音，不需要启动 VOICEVOX 编辑器或 HTTP 引擎。
+
+请按 [VOICEVOX CORE 官方指南](https://github.com/VOICEVOX/voicevox_core/blob/main/docs/guide/user/usage.md) 安装**匹配 Python、系统架构的 wheel**，并下载配套的 VOICEVOX ONNX Runtime、Open JTalk 词典和 `.vvm` 声音模型。仅下载 C API DLL 不代表已经安装 Python API。
+
+下载资源例如放在：
+
+```text
+D:\VoicevoxCore\
+├── onnxruntime\lib\...
+├── dict\open_jtalk_dic_utf_8-1.11\...
+└── models\vvms\0.vvm
+```
+
+PowerShell 中检查 Python API：
+
+```powershell
+python -c "from voicevox_core.blocking import Onnxruntime, OpenJtalk, Synthesizer, VoiceModelFile; print('VOICEVOX Python API OK')"
+```
+
+然后配置当前终端会话（目录请改成你实际安装的位置）：
+
+```powershell
+$env:WAIFU_TTS_BACKEND = 'voicevox'
+$env:WAIFU_VOICEVOX_HOME = 'D:\VoicevoxCore'
+$env:WAIFU_VOICEVOX_STYLE_ID = '0'
+
+# 仅检查依赖和路径，不合成语音
+python .\target\release\speak.py --check
+
+# 测试发声
+python .\target\release\speak.py 'こんにちは、ご主人様！'
+
+# 原有命令无需改动
+waifu ping 1.1.1.1 --miao
+```
+
+若资源不在默认位置，可使用 `WAIFU_VOICEVOX_MODEL` 指定 `.vvm` 文件路径。声音风格 ID 必须属于加载的模型；示例 `0` 不一定适用于你下载的每个模型。
+
+第一次播放新台词时需加载模型并进行合成，速度可能较慢。后续相同台词与模型组合会直接播放 `%LOCALAPPDATA%\waifu-cli\voice-cache` 下的 WAV 缓存，无需再次初始化 CORE。可用 `WAIFU_VOICE_CACHE_DIR` 自定义缓存目录。当前音频播放使用 Windows 自带的 `winsound`。
+
+`python` 必须指向安装了 `voicevox_core` wheel 的那个 Python 环境；如果你使用虚拟环境，请在激活后启动 CLI。脚本不会自动下载大型模型或把它们打包进 `waifu.exe`，发行时请遵守对应声音模型与角色的使用条款。
+
+### 原 CeVIO 后端
+
+默认仍是 `cevio`，以兼容已有安装：
+
+```powershell
+$env:WAIFU_TTS_BACKEND = 'cevio'
+```
+
+原 CeVIO 模式仍要求 Python、`pythonnet`、CeVIO AI 及 “さとうささら” 声音资源。调用时如未启动 Host，脚本会尝试启动。音频播放期间 CLI 命令会等待播放结束；语音失败不会改变原始 CLI 命令的执行结果。
 
 ## 常用命令
 

@@ -34,6 +34,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "doctor failed" }
           .\target\release\waifu.exe git --help
           if ($LASTEXITCODE -ne 0) { throw "git help failed" }
+          .\target\release\waifu.exe git status
+          if ($LASTEXITCODE -ne 0) { throw "git status failed" }
+          .\target\release\waifu.exe git log --count 2
+          if ($LASTEXITCODE -ne 0) { throw "git log failed" }
       - name: Validate PowerShell scripts and installer
         shell: pwsh
         run: |
@@ -53,7 +57,17 @@ jobs:
           if (-not (Test-Path (Join-Path $stage 'waifu.exe'))) { throw 'install.ps1 failed' }
           & (Join-Path $stage 'waifu.exe') --version
           & (Join-Path $stage 'waifu.exe') git --help
-          . (Join-Path $stage 'waifu-completion.ps1')
+          . (Join-Path $stage 'waifu-shell.ps1')
+          $line = 'waifu doc'
+          $completions = @((TabExpansion2 -inputScript $line -cursorColumn $line.Length).CompletionMatches | ForEach-Object { $_.CompletionText })
+          if ('doctor' -notin $completions) {
+            throw "waifu subcommand tab completion failed: $($completions -join ', ')"
+          }
+          $line = 'waifu doctor --v'
+          $completions = @((TabExpansion2 -inputScript $line -cursorColumn $line.Length).CompletionMatches | ForEach-Object { $_.CompletionText })
+          if ('--voice-test' -notin $completions) {
+            throw "waifu option tab completion failed: $($completions -join ', ')"
+          }
           .\uninstall.ps1 -InstallDir $stage -WhatIf
           .\uninstall.ps1 -InstallDir $stage
           if (Test-Path (Join-Path $stage 'waifu.exe')) { throw 'uninstall.ps1 failed' }

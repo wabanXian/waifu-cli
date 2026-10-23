@@ -13,7 +13,8 @@ function Resolve-WaifuExecutable {
     if ($Script:WaifuProjectRoot) {
         $candidates = @(
             (Join-Path $Script:WaifuProjectRoot 'target\release\waifu.exe'),
-            (Join-Path $Script:WaifuProjectRoot 'target\debug\waifu.exe')
+            (Join-Path $Script:WaifuProjectRoot 'target\debug\waifu.exe'),
+            (Join-Path $Script:WaifuProjectRoot 'waifu.exe')
         )
         foreach ($candidate in $candidates) {
             if (Test-Path -LiteralPath $candidate -PathType Leaf) {
@@ -374,5 +375,13 @@ function ps {
         Microsoft.PowerShell.Management\Get-Process @args
     } else {
         Invoke-WaifuPs @args
+    }
+}
+
+# Load optional completion definitions for waifu, without changing -Raw wrappers.
+if ($Script:WaifuProjectRoot) {
+    $completionScript = Join-Path $Script:WaifuProjectRoot 'waifu-completion.ps1'
+    if (Test-Path -LiteralPath $completionScript -PathType Leaf) {
+        . $completionScript
     }
 }

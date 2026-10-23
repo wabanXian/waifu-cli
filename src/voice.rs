@@ -10,18 +10,15 @@ pub fn speak(japanese: &str) {
     };
     let script_path = exe_path.with_file_name("speak.py");
 
+    // Inherit stderr so configuration and missing asset errors are visible.
+    // This is an optional effect: failures must not break the CLI command.
     match Command::new("python")
         .arg(script_path)
         .arg(japanese)
-        .output()
+        .status()
     {
-        Ok(output) => {
-            if !output.status.success() {
-                eprintln!("🌀 播报脚本退出异常：{}", output.status);
-            }
-        }
-        Err(e) => {
-            eprintln!("🐍💥 无法调用 Python 播报：{e:?}");
-        }
+        Ok(status) if status.success() => {}
+        Ok(status) => eprintln!("🌀 播报脚本退出异常：{status}"),
+        Err(e) => eprintln!("🐍💥 无法调用 Python 播报：{e:?}"),
     }
 }

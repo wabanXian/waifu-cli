@@ -2,6 +2,7 @@ name: Windows Release
 
 on:
   push:
+    branches: [master]
     tags: ['v*']
   workflow_dispatch:
 
@@ -10,6 +11,12 @@ permissions:
 
 jobs:
   release:
+    # Branch commits prefixed "release: vX.Y.Z" can create the tag via gh release.
+    # This preserves conventional tag-triggered releases too.
+    if: >-
+      startsWith(github.ref, 'refs/tags/v') ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, 'release: v'))
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -47,14 +54,51 @@ jobs:
           path: |
             dist/waifu-windows-x64.zip
             dist/SHA256SUMS.txt
+      - name: Test packaged archive and installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $extract = Join-Path $env:RUNNER_TEMP 'waifu-release-zip-check'
+          $install = Join-Path $env:RUNNER_TEMP 'waifu-release-install-check'
+          Expand-Archive -LiteralPath .\dist\waifu-windows-x64.zip -DestinationPath $extract -Force
+          & (Join-Path $extract 'waifu.exe') --version
+          if ($LASTEXITCODE -ne 0) { throw 'ZIP executable failed' }
+          & (Join-Path $extract 'waifu.exe') doctor
+          if ($LASTEXITCODE -ne 0) { throw 'ZIP doctor failed' }
+          & (Join-Path $extract 'install.ps1') -InstallDir $install -NoProfile -NoPath
+          if (-not (Test-Path (Join-Path $install 'waifu.exe'))) { throw 'ZIP installer failed' }
+          & (Join-Path $install 'uninstall.ps1') -InstallDir $install
+          if (Test-Path (Join-Path $install 'waifu.exe')) { throw 'ZIP uninstaller failed' }
       - name: Publish GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: >-
+          startsWith(github.ref, 'refs/tags/v') ||
+          (github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, 'release: v'))
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$env:GITHUB_REF_NAME" `
+          $ErrorActionPreference = 'Stop'
+          if ($env:GITHUB_REF -like 'refs/tags/v*') {
+            $tag = $env:GITHUB_REF_NAME
+          } else {
+            $subject = (git log -1 --format=%s).Trim()
+            if ($subject -notmatch '^release: (v[0-9]+\.[0-9]+\.[0-9]+)) {
+              throw "Invalid release commit message: $subject"
+            }
+            $tag = $Matches[1]
+          }
+          $versionLine = Get-Content .\Cargo.toml | Where-Object { $_ -match '^version\s*=\s*"[0-9]+\.[0-9]+\.[0-9]+"' } | Select-Object -First 1
+          if (-not $versionLine -or $versionLine -notmatch '"([0-9]+\.[0-9]+\.[0-9]+)"') {
+            throw 'Cannot read crate version from Cargo.toml'
+          }
+          if ($tag -ne ('v' + $Matches[1])) {
+            throw "Release tag $tag does not match Cargo.toml version"
+          }
+          # --target creates the tag at the exact tested commit when missing.
+          gh release create "$tag" `
             .\dist\waifu-windows-x64.zip `
             .\dist\SHA256SUMS.txt `
-            --title "waifu-cli $env:GITHUB_REF_NAME" `
+            --target "$env:GITHUB_SHA" `
+            --title "waifu-cli $tag" `
             --generate-notes
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub Release upload failed' }

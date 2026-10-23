@@ -59,6 +59,12 @@ jobs:
           & (Join-Path $stage 'waifu.exe') git --help
           . (Join-Path $stage 'waifu-shell.ps1')
           $line = 'waifu doc'
+          $tok = $null
+          $errors = $null
+          $ast = [System.Management.Automation.Language.Parser]::ParseInput($line, [ref]$tok, [ref]$errors)
+          $astCommand = $ast.Find({ param($node) $node -is [System.Management.Automation.Language.CommandAst] }, $true)
+          $direct = @(Get-WaifuCompletionCandidates -Word 'doc' -Ast $astCommand | ForEach-Object { $_.CompletionText })
+          Write-Host "Direct completion: $($direct -join ', ')"
           $completions = @((TabExpansion2 -inputScript $line -cursorColumn $line.Length).CompletionMatches | ForEach-Object { $_.CompletionText })
           if ('doctor' -notin $completions) {
             throw "waifu subcommand tab completion failed: $($completions -join ', ')"

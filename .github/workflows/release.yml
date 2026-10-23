@@ -63,6 +63,9 @@ jobs:
           $extract = Join-Path $env:RUNNER_TEMP 'waifu-release-zip-check'
           $install = Join-Path $env:RUNNER_TEMP 'waifu-release-install-check'
           Expand-Archive -LiteralPath .\dist\waifu-windows-x64.zip -DestinationPath $extract -Force
+          if (-not (Test-Path -LiteralPath (Join-Path $extract 'LICENSE') -PathType Leaf)) {
+            throw 'Release ZIP is missing the MIT LICENSE file'
+          }
           & (Join-Path $extract 'waifu.exe') --version
           if ($LASTEXITCODE -ne 0) { throw 'ZIP executable failed' }
           & (Join-Path $extract 'waifu.exe') doctor

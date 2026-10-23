@@ -325,6 +325,12 @@ cargo clippy --locked --all-targets
 .\target\release\waifu.exe doctor --voice-test
 ```
 
+## 开源协议
+
+本项目的原创代码和文档采用 **[MIT License](LICENSE)**，允许使用、修改、再分发（包括商业用途），但需要保留版权及许可声明；软件按现状提供，不附带担保。版权署名：**Copyright (c) 2026 wabanXian**。
+
+**第三方内容不适用本项目的 MIT 授权**：VOICEVOX CORE、声音模型、角色、ONNX Runtime、CUDA/cuDNN、CeVIO 及 Rust/Python 依赖分别遵循其自身许可证和使用规则。发行包不包含 VOICEVOX 模型或 CUDA 资源。
+
 ## 版本与后续计划
 
 - 当前版本：**v0.1.0**。Windows x64 Release ZIP 为轻量程序包；VOICEVOX 资源需自行准备并遵守原始许可。

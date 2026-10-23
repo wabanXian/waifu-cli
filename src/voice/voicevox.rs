@@ -188,7 +188,6 @@ impl Drop for Resources<'_> {
 
 #[derive(Debug)]
 struct Assets {
-    root: PathBuf,
     core: PathBuf,
     dll: PathBuf,
     ort_dir: PathBuf,
@@ -317,7 +316,7 @@ impl Assets {
             .parse::<u32>()
             .map_err(|_| "WAIFU_VOICEVOX_STYLE_ID 必须是非负整数".to_string())?;
 
-        Ok(Self { root, core, dll, ort_dir, dict, model, style })
+        Ok(Self { core, dll, ort_dir, dict, model, style })
     }
 }
 

@@ -17,7 +17,7 @@ if (Test-Path -LiteralPath $profilePath -PathType Leaf) {
     if ($updated -cne $current -and $PSCmdlet.ShouldProcess($profilePath, 'Remove managed waifu-cli Profile block')) {
         $backup = "$profilePath.bak-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
         Copy-Item -LiteralPath $profilePath -Destination $backup
-        [System.IO.File]::WriteAllText($profilePath, $updated, [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText($profilePath, $updated, [System.Text.UTF8Encoding]::new($true))
         Write-Host "🐾 Profile 已恢复（备份：$backup）"
     }
 }

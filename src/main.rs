@@ -1,5 +1,7 @@
 mod config;
 mod doctor;
+mod waifu_git;
+mod waifu_update;
 mod style;
 mod utils;
 mod voice;
@@ -33,6 +35,10 @@ enum Commands {
     Ps(waifu_ps::PsArgs),
     /// 检查项目资源、PowerShell 环境和可选语音功能
     Doctor(doctor::DoctorArgs),
+    /// 只读的 Git 猫娘助手
+    Git(waifu_git::GitArgs),
+    /// 更新已安装的 waifu-cli (通过 update.ps1)
+    Update,
 }
 
 fn main() -> ExitCode {
@@ -47,6 +53,8 @@ fn main() -> ExitCode {
         Commands::Clear(args) => ("clear", waifu_clear::run_clear(args)),
         Commands::Ps(args) => ("ps", waifu_ps::run_ps(args)),
         Commands::Doctor(args) => ("doctor", doctor::run(args)),
+        Commands::Git(args) => ("git", waifu_git::run(args)),
+        Commands::Update => ("update", waifu_update::run()),
     };
 
     if let Err(error) = result {

@@ -1,4 +1,5 @@
 mod config;
+mod doctor;
 mod style;
 mod utils;
 mod voice;
@@ -30,6 +31,8 @@ enum Commands {
     Echo(waifu_echo::EchoArgs),
     Clear(waifu_clear::ClearArgs),
     Ps(waifu_ps::PsArgs),
+    /// 检查项目资源、PowerShell 环境和可选语音功能
+    Doctor(doctor::DoctorArgs),
 }
 
 fn main() -> ExitCode {
@@ -43,6 +46,7 @@ fn main() -> ExitCode {
         Commands::Echo(args) => ("echo", waifu_echo::run_echo(args)),
         Commands::Clear(args) => ("clear", waifu_clear::run_clear(args)),
         Commands::Ps(args) => ("ps", waifu_ps::run_ps(args)),
+        Commands::Doctor(args) => ("doctor", doctor::run(args)),
     };
 
     if let Err(error) = result {

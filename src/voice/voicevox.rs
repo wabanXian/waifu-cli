@@ -66,6 +66,7 @@ type JtalkDelete = unsafe extern "C" fn(Ptr);
 type InitDefault = unsafe extern "C" fn() -> InitOptions;
 type SynthNew = unsafe extern "C" fn(*const c_void, *const c_void, InitOptions, *mut Ptr) -> ResultCode;
 type SynthDelete = unsafe extern "C" fn(Ptr);
+type SynthGpuMode = unsafe extern "C" fn(*const c_void) -> bool;
 type ModelOpen = unsafe extern "C" fn(*const c_char, *mut Ptr) -> ResultCode;
 type ModelDelete = unsafe extern "C" fn(Ptr);
 type ModelLoadDefault = unsafe extern "C" fn() -> ModelOptions;
@@ -161,6 +162,7 @@ struct Api {
     init_default: InitDefault,
     synth_new: SynthNew,
     synth_delete: SynthDelete,
+    synth_gpu_mode: SynthGpuMode,
     model_open: ModelOpen,
     model_delete: ModelDelete,
     model_load_default: ModelLoadDefault,
@@ -185,6 +187,7 @@ impl Api {
             init_default: sym!("voicevox_make_default_initialize_options"),
             synth_new: sym!("voicevox_synthesizer_new"),
             synth_delete: sym!("voicevox_synthesizer_delete"),
+            synth_gpu_mode: sym!("voicevox_synthesizer_is_gpu_mode"),
             model_open: sym!("voicevox_voice_model_file_open"),
             model_delete: sym!("voicevox_voice_model_file_delete"),
             model_load_default: sym!("voicevox_make_default_load_voice_model_options"),
@@ -428,7 +431,7 @@ fn play_wav(wav: &[u8]) -> Result<(), String> {
     Ok(())
 }
 
-fn synthesize(assets: &Assets, text: &str) -> Result<Vec<u8>, String> {
+fn synthesize_with_gpu(assets: &Assets, text: &str) -> Result<(Vec<u8>, bool), String> {
     // Register GPU libraries for this process only; they may be loaded on demand
     // by the ONNX Runtime execution provider after the main DLL is loaded.
     let _dll_dirs = DllDirectories::register(&assets.additional_dll_dirs)?;
@@ -462,6 +465,7 @@ fn synthesize(assets: &Assets, text: &str) -> Result<Vec<u8>, String> {
 
     let opts = unsafe { (api.init_default)() };
     api.check(unsafe { (api.synth_new)(ort, resources.jtalk, opts, &mut resources.synth) }, "创建合成器")?;
+    let gpu_active = unsafe { (api.synth_gpu_mode)(resources.synth) };
 
     let model_c = cpath(&assets.model)?;
     api.check(unsafe { (api.model_open)(model_c.as_ptr(), &mut resources.model) }, "读取语音模型")?;
@@ -482,7 +486,53 @@ fn synthesize(assets: &Assets, text: &str) -> Result<Vec<u8>, String> {
     }
     let bytes = unsafe { std::slice::from_raw_parts(wav, length).to_vec() };
     unsafe { (api.bytes_free)(wav); }
-    Ok(bytes)
+    Ok((bytes, gpu_active))
+}
+
+fn synthesize(assets: &Assets, text: &str) -> Result<Vec<u8>, String> {
+    synthesize_with_gpu(assets, text).map(|(wav, _)| wav)
+}
+
+/// Lightweight checks only: no GPU inference, DLL loads or speech synthesis.
+pub(super) fn inspect() -> Vec<(String, String, bool)> {
+    let mut results = Vec::new();
+    match find_installation() {
+        Ok((_, core, dll)) => results.push((
+            "VOICEVOX C API".into(),
+            format!("{} (DLL: {})", core.display(), dll.display()),
+            true,
+        )),
+        Err(err) => {
+            results.push(("VOICEVOX C API".into(), err, false));
+            return results;
+        }
+    }
+    match Assets::discover() {
+        Ok(assets) => {
+            results.push(("日语词典".into(), assets.dict.display().to_string(), true));
+            results.push(("声音模型".into(), format!("{} · Style ID {}", assets.model.display(), assets.style), true));
+            let dlls = fs::read_dir(&assets.ort_dir).ok().into_iter().flatten().flatten()
+                .filter(|e| e.path().extension().and_then(OsStr::to_str)
+                    .is_some_and(|ext| ext.eq_ignore_ascii_case("dll")))
+                .count();
+            results.push((
+                "ONNX Runtime".into(),
+                format!("{} · 找到 {dlls} 个 DLL（尚未加载）", assets.ort_dir.display()),
+                dlls > 0,
+            ));
+            results.push(("GPU".into(), "未测试；运行 waifu doctor --voice-test 查询实际运行模式".into(), true));
+        }
+        Err(err) => results.push(("语音资源".into(), err, false)),
+    }
+    results
+}
+
+/// Always synthesize an uncached sample without playing it, so CPU/GPU mode
+/// is measured from the live synthesizer rather than inferred from GPU names.
+pub(super) fn probe_gpu_mode() -> Result<bool, String> {
+    let assets = Assets::discover()?;
+    let (_, is_gpu) = synthesize_with_gpu(&assets, "音声合成のテストです。")?;
+    Ok(is_gpu)
 }
 
 pub fn speak(text: &str) -> Result<(), String> {

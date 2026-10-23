@@ -1,8 +1,34 @@
-# waifu-ping
+# waifu-cli 🐾
 
-`waifu-ping` 是一个面向 Windows 终端的 Rust 工具箱。它为常用命令提供彩色、带随机台词的 waifu 风格输出，并通过 `waifu-shell.ps1` 将部分命令包装成更自然的 PowerShell 体验。
+**v0.1.0 · Windows x64 · Rust / PowerShell**
 
-项目构建出的程序名为 `waifu.exe`。
+一个会撒娇、能说日语的 Windows 终端工具箱。将 `ping`、`cd`、`ls`、`cat`、`echo`、`clear`、`ps` 和 Git 状态查询装进 `waifu.exe`，通过 `waifu-shell.ps1` 提供 PowerShell 友好的猫娘输出。使用 `-Raw` 可以转回原生 PowerShell 命令。
+
+**[下载 v0.1.0 (Windows ZIP)](https://github.com/wabanXian/waifu-cli/releases/tag/v0.1.0)** · [所有 Releases](https://github.com/wabanXian/waifu-cli/releases) · [Windows CI](https://github.com/wabanXian/waifu-cli/actions/workflows/ci.yml) · [后续计划 #7](https://github.com/wabanXian/waifu-cli/issues/7)
+
+## 直接使用（无需编译 Rust）
+
+1. 从 **[v0.1.0 Release](https://github.com/wabanXian/waifu-cli/releases/tag/v0.1.0)** 下载 `waifu-windows-x64.zip`，解压到本地目录。
+2. 在该目录打开 PowerShell，运行：
+
+```powershell
+.\waifu.exe --version
+.\waifu.exe doctor
+.\install.ps1
+```
+
+3. 重新打开 PowerShell，开始使用：
+
+```powershell
+waifu git status
+waifu git log --count 5
+waifu ping 1.1.1.1 --count 2
+waifu doctor
+```
+
+**无需管理员权限，安装到当前用户目录。** `install.ps1` 会为当前用户设置 PATH 和 PowerShell Profile（修改前备份）；如果不希望修改它们，运行 `.\install.ps1 -NoProfile -NoPath`。
+
+可选的日语语音需另行下载 VOICEVOX CORE、ONNX Runtime、词典和 `.vvm` 模型。**发行 ZIP 不包含语音模型或 CUDA DLL**；不启用 `--miao` 也能正常使用工具箱。详见下文“可选语音功能”。
 
 ## 构建
 
@@ -52,7 +78,7 @@ $env:PATH = "$waifuDir;$env:PATH"
 
 ## 发行、安装、更新和卸载（Windows）
 
-`master` 每次提交和 PR 都由 [Windows CI](https://github.com/wabanXian/waifu-cli/actions/workflows/ci.yml) 执行 `cargo check`、`cargo test`、Clippy 和 Windows Release 构建，并上传 CI 构建产物。推送 `v*` 标签时，独立的 [Release 工作流](https://github.com/wabanXian/waifu-cli/actions/workflows/release.yml) 会生成 `waifu-windows-x64.zip`、`SHA256SUMS.txt` 并尝试创建 GitHub Release。
+`master` 每次提交和 PR 都由 [Windows CI](https://github.com/wabanXian/waifu-cli/actions/workflows/ci.yml) 执行 `cargo check`、`cargo test`、Clippy、Windows Release 构建和 PowerShell 安装/补全测试。发布由 [Windows Release 工作流](https://github.com/wabanXian/waifu-cli/actions/workflows/release.yml) 执行，生成 `waifu-windows-x64.zip` 和 `SHA256SUMS.txt` 并上传 GitHub Release；发布可以由 `v*` 标签触发，也可通过明确的 `release: vX.Y.Z` 主干提交触发。
 
 ### 安装
 
@@ -94,7 +120,7 @@ waifu update
 & "$env:LOCALAPPDATA\Programs\waifu-cli\uninstall.ps1"
 ```
 
-更新脚本在覆盖现有文件前校验 ZIP 的 SHA256；`waifu update` 会启动单独的 PowerShell 更新程序，避免覆盖正在运行的 exe。只有正式 Release 出现之后，`waifu update` 的在线功能才可使用。离线更新需要对应的校验文件。
+更新脚本在覆盖现有文件前校验 ZIP 的 SHA-256；`waifu update` 会启动独立的 PowerShell 更新程序，避免覆盖正在运行的 exe。在线更新读取最新的正式 GitHub Release，离线更新需要同时提供 ZIP 和对应的 `SHA256SUMS.txt`。**更新不会下载语音模型、CUDA/cuDNN 库或修改已有的 `WAIFU_PROJECT_ROOT` 设置。**
 
 卸载只删除安装器管理的 Profile 片段、用户 PATH 项和已知应用文件，不递归删除文件夹里的其他内容。VOICEVOX 模型与声音缓存不会被清理。
 
@@ -150,7 +176,7 @@ waifu-ping/
 ### 本地测试
 
 ```powershell
-cd D:\BaiduNetdiskDownload\waifu-ping
+cd D:\path\to\waifu-cli
 git pull origin master
 cargo build --release --locked
 
@@ -197,12 +223,14 @@ Remove-Item Env:GH_TOKEN
 如果有多个 ONNX Runtime 目录，可以明确指定一个：
 
 ```powershell
-$env:WAIFU_VOICEVOX_ORT_DIR = 'D:\BaiduNetdiskDownload\waifu-ping\voicevox_core\onnxruntime\lib'
+$env:WAIFU_VOICEVOX_ORT_DIR = 'D:\path\to\waifu-cli\voicevox_core\onnxruntime\lib'
 ```
 
 这只指定运行库所在目录，不是模型目录；`WAIFU_VOICEVOX_MODEL` 仍负责选择 .vvm。CUDA 运行可能依赖对应版本的 NVIDIA 驱动、CUDA 和 cuDNN 库，Downloader 的 `additional_libraries` 负责提供项目需要的一部分 DLL。
 
-注意：已缓存的台词只播放 WAV，不会再触发 GPU 合成。如果想验证 GPU 日志，请使用一条尚未缓存的语音，或自行清空 `%LOCALAPPDATA%\waifu-cli\voice-cache` 中的 WAV。
+**离线安装 CUDA 依赖：** 可以分别下载官方 [ONNX Runtime CUDA 1.17.3](https://github.com/VOICEVOX/onnxruntime-builder/releases/download/voicevox_onnxruntime-1.17.3/voicevox_onnxruntime-win-x64-cuda-1.17.3.tgz) 与 [CUDA additional libraries 0.2.1](https://github.com/VOICEVOX/voicevox_additional_libraries/releases/download/0.2.1/CUDA-windows-x64.zip)。解压时让对应 DLL 直接位于 `voicevox_core/onnxruntime/lib` 与 `voicevox_core/additional_libraries`。后者如果缺少 `zlibwapi.dll`，按照 [NVIDIA cuDNN Windows 安装说明](https://docs.nvidia.com/deeplearning/cudnn/archives/cudnn-890/install-guide/index.html#install-zlib-windows) 安装匹配的 **64 位** Zlib DLL（可放在 `voicevox_core/additional_libraries`），不要随意下载来源不明的 DLL。CUDA/cuDNN 版本须与 ONNX Runtime 配套；不保证任意组合可以使用。
+
+注意：已缓存的台词只播放 WAV，不会再触发 GPU 合成。验证实际 CUDA 时，推荐执行 `waifu doctor --voice-test`：会绕开缓存，合成但不播放测试语音，并检查 CORE 返回的 GPU/CPU 模式。
 
 ### 旧 CeVIO 兼容模式
 
@@ -289,4 +317,14 @@ Get-Process -Name pwsh
 ```powershell
 cargo check --locked
 cargo test --locked
+cargo clippy --locked --all-targets
+.\target\release\waifu.exe doctor
+# 有完整 VOICEVOX 环境时再执行
+.\target\release\waifu.exe doctor --voice-test
 ```
+
+## 版本与后续计划
+
+- 当前版本：**v0.1.0**。Windows x64 Release ZIP 为轻量程序包；VOICEVOX 资源需自行准备并遵守原始许可。
+- GitHub Issues [#8–#12](https://github.com/wabanXian/waifu-cli/issues?q=is%3Aissue+is%3Aclosed) 已完成：诊断、安装更新、Git 助手、命令补全与 Windows CI。
+- 下一阶段的角色/声线选择、持久化、非阻塞播放与情绪系统保留在 [Issue #7](https://github.com/wabanXian/waifu-cli/issues/7)，目前不包含在 v0.1.0。

@@ -39,7 +39,7 @@ $files = @(
     @{Source=$binary; Name='waifu.exe'},
     @{Source=$json; Name='waifu.json'}
 )
-foreach ($name in @('waifu-shell.ps1','waifu-completion.ps1','update.ps1','uninstall.ps1','install.ps1','README.md','speak.py')) {
+foreach ($name in @('waifu-shell.ps1','waifu-completion.ps1','update.ps1','uninstall.ps1','install.ps1','README.md','README_EN.md','speak.py')) {
     $from = Join-Path $source $name
     if (Test-Path -LiteralPath $from -PathType Leaf) {
         $files += @{Source=$from; Name=$name}

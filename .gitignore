@@ -1,3 +1,7 @@
 target/
 **/*.rs.bk
 ./vscode
+
+# Downloaded VOICEVOX CORE C API bundles and models (never commit large voice assets)
+/voicevox_core-windows-x64-*/
+/voicevox_core/

@@ -1,0 +1,45 @@
+name: Windows CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - name: Check and test
+        run: |
+          cargo check --locked
+          cargo test --locked
+      - name: Clippy
+        run: cargo clippy --locked --all-targets
+      - name: Release build
+        run: cargo build --release --locked
+      - name: Smoke test
+        shell: pwsh
+        run: |
+          .\target\release\waifu.exe --version
+          if ($LASTEXITCODE -ne 0) { throw "waifu --version failed" }
+          .\target\release\waifu.exe doctor
+          if ($LASTEXITCODE -ne 0) { throw "doctor failed" }
+          .\target\release\waifu.exe git --help
+          if ($LASTEXITCODE -ne 0) { throw "git help failed" }
+      - name: Upload compiled binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: waifu-windows-x64-ci
+          path: |
+            target/release/waifu.exe
+            target/release/waifu.json
+            target/release/speak.py
+          if-no-files-found: error

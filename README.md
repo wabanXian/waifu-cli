@@ -1,5 +1,7 @@
 # waifu-cli 🐾
 
+**[简体中文](README.md) | [English](README_EN.md)**
+
 **v0.1.0 · Windows x64 · Rust / PowerShell**
 
 一个会撒娇、能说日语的 Windows 终端工具箱。将 `ping`、`cd`、`ls`、`cat`、`echo`、`clear`、`ps` 和 Git 状态查询装进 `waifu.exe`，通过 `waifu-shell.ps1` 提供 PowerShell 友好的猫娘输出。使用 `-Raw` 可以转回原生 PowerShell 命令。

@@ -1,18 +1,18 @@
 # waifu-cli 🐾
 
-**v0.1.0 · Windows x64 · Rust / PowerShell**
+**v0.1.1 · Windows x64 · Rust / PowerShell**
 
 **English** | [简体中文](README.md)
 
 A playful Windows command-line toolbox with colorful catgirl-style messages and optional Japanese speech. `waifu.exe` includes utilities for `ping`, `cd`, `ls`, `cat`, `echo`, `clear`, `ps`, and read-only Git summaries. An optional PowerShell wrapper makes them easier to use interactively, while `-Raw` preserves access to the native PowerShell commands.
 
-**[Download v0.1.0 (Windows ZIP)](https://github.com/wabanXian/waifu-cli/releases/tag/v0.1.0)** · [All releases](https://github.com/wabanXian/waifu-cli/releases) · [Windows CI](https://github.com/wabanXian/waifu-cli/actions/workflows/ci.yml) · [Roadmap (#7)](https://github.com/wabanXian/waifu-cli/issues/7)
+**[Download v0.1.1 (Windows ZIP)](https://github.com/wabanXian/waifu-cli/releases/tag/v0.1.1)** · [All releases](https://github.com/wabanXian/waifu-cli/releases) · [Windows CI](https://github.com/wabanXian/waifu-cli/actions/workflows/ci.yml) · [Roadmap (#7)](https://github.com/wabanXian/waifu-cli/issues/7)
 
 > **Platform:** Windows x64. The program's messages are primarily in Chinese and its optional speech is in Japanese; this English guide does not change the application's UI language.
 
 ## Quick start — no Rust required
 
-1. Download `waifu-windows-x64.zip` from the [v0.1.0 release](https://github.com/wabanXian/waifu-cli/releases/tag/v0.1.0), then extract it.
+1. Download `waifu-windows-x64.zip` from the [v0.1.1 release](https://github.com/wabanXian/waifu-cli/releases/tag/v0.1.1), then extract it.
 2. Open PowerShell in the extracted directory and run:
 
 ```powershell
@@ -39,6 +39,23 @@ To install without editing your profile or PATH:
 ```
 
 **Speech is optional.** The lightweight release ZIP does **not** include VOICEVOX CORE, voice models, the Japanese dictionary, ONNX Runtime, or CUDA/cuDNN DLLs. All non-speech commands work without those components.
+
+### Upgrade from v0.1.0
+
+If you previously used the installer, you can update in place:
+
+```powershell
+waifu update
+```
+
+The updater downloads the latest Release ZIP and SHA-256 manifest, validates the archive, and replaces the installed files. Open a new PowerShell session afterward:
+
+```powershell
+waifu --version  # expected: waifu 0.1.1
+waifu doctor
+```
+
+**v0.1.1** is a maintenance release that bundles both README languages and the MIT `LICENSE` with the Windows package. It does not introduce new CLI subcommands. The original v0.1.0 release artifacts remain unchanged.
 
 ## Commands
 
@@ -290,6 +307,6 @@ cargo test --locked
 cargo clippy --locked --all-targets
 ```
 
-**v0.1.0** is the first public Windows x64 release. VOICEVOX binaries and models remain separate downloads subject to their own licensing terms.
+**v0.1.1** is the first public Windows x64 release. VOICEVOX binaries and models remain separate downloads subject to their own licensing terms.
 
-The future voice/style selector, persistent voice preferences, non-blocking speech, and mood/personality features are tracked in [Issue #7](https://github.com/wabanXian/waifu-cli/issues/7); they are **not** included in v0.1.0.
+The future voice/style selector, persistent voice preferences, non-blocking speech, and mood/personality features are tracked in [Issue #7](https://github.com/wabanXian/waifu-cli/issues/7); they are **not** included in v0.1.1.

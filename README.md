@@ -2,15 +2,15 @@
 
 **[简体中文](README.md) | [English](README_EN.md)**
 
-**v0.1.0 · Windows x64 · Rust / PowerShell**
+**v0.1.1 · Windows x64 · Rust / PowerShell**
 
 一个会撒娇、能说日语的 Windows 终端工具箱。将 `ping`、`cd`、`ls`、`cat`、`echo`、`clear`、`ps` 和 Git 状态查询装进 `waifu.exe`，通过 `waifu-shell.ps1` 提供 PowerShell 友好的猫娘输出。使用 `-Raw` 可以转回原生 PowerShell 命令。
 
-**[下载 v0.1.0 (Windows ZIP)](https://github.com/wabanXian/waifu-cli/releases/tag/v0.1.0)** · [所有 Releases](https://github.com/wabanXian/waifu-cli/releases) · [Windows CI](https://github.com/wabanXian/waifu-cli/actions/workflows/ci.yml) · [后续计划 #7](https://github.com/wabanXian/waifu-cli/issues/7)
+**[下载 v0.1.1 (Windows ZIP)](https://github.com/wabanXian/waifu-cli/releases/tag/v0.1.1)** · [所有 Releases](https://github.com/wabanXian/waifu-cli/releases) · [Windows CI](https://github.com/wabanXian/waifu-cli/actions/workflows/ci.yml) · [后续计划 #7](https://github.com/wabanXian/waifu-cli/issues/7)
 
 ## 直接使用（无需编译 Rust）
 
-1. 从 **[v0.1.0 Release](https://github.com/wabanXian/waifu-cli/releases/tag/v0.1.0)** 下载 `waifu-windows-x64.zip`，解压到本地目录。
+1. 从 **[v0.1.1 Release](https://github.com/wabanXian/waifu-cli/releases/tag/v0.1.1)** 下载 `waifu-windows-x64.zip`，解压到本地目录。
 2. 在该目录打开 PowerShell，运行：
 
 ```powershell
@@ -31,6 +31,23 @@ waifu doctor
 **无需管理员权限，安装到当前用户目录。** `install.ps1` 会为当前用户设置 PATH 和 PowerShell Profile（修改前备份）；如果不希望修改它们，运行 `.\install.ps1 -NoProfile -NoPath`。
 
 可选的日语语音需另行下载 VOICEVOX CORE、ONNX Runtime、词典和 `.vvm` 模型。**发行 ZIP 不包含语音模型或 CUDA DLL**；不启用 `--miao` 也能正常使用工具箱。详见下文“可选语音功能”。
+
+### 从 v0.1.0 升级
+
+如果已经通过安装脚本安装了旧版，可以直接运行：
+
+```powershell
+waifu update
+```
+
+更新器会下载最新 Release 的 ZIP 与 SHA-256 清单，验证后替换安装文件。更新完成后重新打开 PowerShell，并检查：
+
+```powershell
+waifu --version   # 应显示 waifu 0.1.1
+waifu doctor
+```
+
+本次 **v0.1.1** 是维护版本，主要补齐中文版/英文版 README、MIT `LICENSE` 和安装包随附文档，不引入新的 CLI 子命令；**v0.1.0 的下载附件仍保留不变**。
 
 ## 构建
 
@@ -333,6 +350,6 @@ cargo clippy --locked --all-targets
 
 ## 版本与后续计划
 
-- 当前版本：**v0.1.0**。Windows x64 Release ZIP 为轻量程序包；VOICEVOX 资源需自行准备并遵守原始许可。
+- 当前版本：**v0.1.1**。Windows x64 Release ZIP 为轻量程序包；VOICEVOX 资源需自行准备并遵守原始许可。
 - GitHub Issues [#8–#12](https://github.com/wabanXian/waifu-cli/issues?q=is%3Aissue+is%3Aclosed) 已完成：诊断、安装更新、Git 助手、命令补全与 Windows CI。
-- 下一阶段的角色/声线选择、持久化、非阻塞播放与情绪系统保留在 [Issue #7](https://github.com/wabanXian/waifu-cli/issues/7)，目前不包含在 v0.1.0。
+- 下一阶段的角色/声线选择、持久化、非阻塞播放与情绪系统保留在 [Issue #7](https://github.com/wabanXian/waifu-cli/issues/7)，目前不包含在 v0.1.1。

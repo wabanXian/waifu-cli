@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.1.1 — 维护版本
+
+- 将原有中文 README 整理为中英文双语文档，新增 `README_EN.md`，两个版本相互链接。
+- 添加标准 MIT `LICENSE`（Copyright (c) 2026 wabanXian），并在 `Cargo.toml`、双语 README 中注明授权。
+- Windows Release ZIP 新增 `README_EN.md`、`LICENSE`、`CHANGELOG.md`；安装、更新和卸载脚本同步维护这些文件。
+- 强化 Windows Release 冒烟测试：检查二进制版本、LICENSE 与发布文档齐备。
+- 保持现有 CLI 子命令、可选 VOICEVOX/CUDA 资源以及 #7、#13、#14 规划不变。
+- 提供从 v0.1.0 通过 `waifu update` 更新到 v0.1.1 的说明。
+
 ## v0.1.0 — 首次 Windows x64 正式发布
 
 ### 功能

@@ -37,7 +37,7 @@ if ($oldPath) {
 if (-not $KeepFiles -and (Test-Path -LiteralPath $InstallDir -PathType Container)) {
     # Do not delete the folder recursively: it may contain user models/configuration.
     foreach ($name in @('waifu.exe','waifu.json','speak.py','waifu-shell.ps1',
-        'waifu-completion.ps1','install.ps1','uninstall.ps1','update.ps1','README.md','README_EN.md','LICENSE')) {
+        'waifu-completion.ps1','install.ps1','uninstall.ps1','update.ps1','README.md','README_EN.md','LICENSE','CHANGELOG.md')) {
         $path = Join-Path $InstallDir $name
         if ((Test-Path -LiteralPath $path -PathType Leaf) -and
             $PSCmdlet.ShouldProcess($path, 'Delete installed waifu-cli file')) {

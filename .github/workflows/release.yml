@@ -67,6 +67,18 @@ jobs:
           if (-not (Test-Path -LiteralPath (Join-Path $extract 'LICENSE') -PathType Leaf)) {
             throw 'Release ZIP is missing the MIT LICENSE file'
           }
+          foreach ($requiredFile in @('README.md','README_EN.md','CHANGELOG.md')) {
+            if (-not (Test-Path -LiteralPath (Join-Path $extract $requiredFile) -PathType Leaf)) {
+              throw "Release ZIP is missing $requiredFile"
+            }
+          }
+          $versionMatch = [regex]::Match((Get-Content -LiteralPath .\Cargo.toml -Raw), '(?m)^version\s*=\s*"([0-9]+[.][0-9]+[.][0-9]+)"')
+          if (-not $versionMatch.Success) { throw 'Cannot determine expected version from Cargo.toml' }
+          $expectedVersion = 'waifu ' + $versionMatch.Groups[1].Value
+          $actualVersion = (& (Join-Path $extract 'waifu.exe') --version | Out-String).Trim()
+          if ($actualVersion -ne $expectedVersion) {
+            throw "Release ZIP version mismatch: expected $expectedVersion, got $actualVersion"
+          }
           & (Join-Path $extract 'waifu.exe') --version
           if ($LASTEXITCODE -ne 0) { throw 'ZIP executable failed' }
           & (Join-Path $extract 'waifu.exe') doctor
